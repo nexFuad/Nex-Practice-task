@@ -11,3 +11,23 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Site {
+  id             String     @id @default(cuid())
+  name           String
+  code           String     @unique
+  address        String
+  latitude       Float?
+  longitude      Float?
+  geofenceRadius Int        @default(100)
+  timezone       String     @default("Asia/Singapore")
+  status         SiteStatus @default(ACTIVE)
+  assignedGuards Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+enum SiteStatus {
+  ACTIVE
+  INACTIVE
+}
