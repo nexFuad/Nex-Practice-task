@@ -7,6 +7,8 @@ import { clientsRoutes } from "./modules/clients/clients.routes.js";
 import { seedClients } from "./modules/clients/clients.seed.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { employmentRoutes } from "./modules/employment/employment.routes.js";
+import { authRoutes } from "./modules/auth/auth.routes.js";
+import { seedDemoLogin } from "./modules/auth/auth.seed.js";
 const app = new Hono();
 app.use("/api/*", cors({ origin: "http://localhost:3000" }));
 app.get("/", (c) => c.json({ service: "Guardly API" }));
@@ -14,9 +16,11 @@ app.route("/api/sites", sitesRoutes);
 app.route("/api/clients", clientsRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/employment", employmentRoutes);
+app.route("/api/auth", authRoutes);
 async function start() {
     await seedSites();
     await seedClients();
+    await seedDemoLogin();
     const port = Number(process.env.PORT ?? 3001);
     const server = serve({ fetch: app.fetch, port }, (info) => {
         console.log(`Guardly API: http://localhost:${info.port}`);

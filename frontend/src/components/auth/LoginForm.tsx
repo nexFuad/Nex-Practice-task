@@ -11,21 +11,24 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { login } from "./auth.api";
+import { setSignedInUser } from "./auth.session";
 
 type DemoAccount = {
   label: string;
   employeeId: string;
   company: string;
+  password: string;
 };
 
 const demoAccounts: DemoAccount[] = [
-  { label: "OM Demo", employeeId: "OM001", company: "Azovis" },
+  { label: "OM Demo", employeeId: "fuad123", company: "fuad", password: "123456" },
   {
     label: "Officer Demo",
     employeeId: "officer-demo",
-    company: "Guardly Security",
+    company: "Guardly Security", password: "demo-password",
   },
-  { label: "Admin Demo", employeeId: "admin-demo", company: "Guardly Admin" },
+  { label: "OM Admin", employeeId: "admin-demo", company: "Guardly Admin", password: "demo-password" },
 ];
 
 export function LoginForm() {
@@ -35,55 +38,51 @@ export function LoginForm() {
   const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [accountType, setAccountType] = useState("OM Demo");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const applyDemoAccount = (account: DemoAccount) => {
     setEmployeeId(account.employeeId);
     setCompany(account.company);
-    setPassword(account.label === "OM Demo" ? "om12345" : "demo-password");
+    setPassword(account.password);
+    setAccountType(account.label);
     setMessage(`${account.label} credentials are ready.`);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const isOmDemo =
-      employeeId.trim().toLowerCase() === "om001" &&
-      company.trim().toLowerCase() === "azovis" &&
-      password === "om12345";
-
-    if (isOmDemo) {
-      router.push("/om/dashboard");
-      return;
-    }
-
-    setMessage("Use the OM demo credentials below to access the dashboard.");
+    setIsSubmitting(true); setMessage("");
+    try { const result = await login({ employeeId, company, password, accountType }); setSignedInUser(result.user); router.push(result.dashboardPath); }
+    catch (cause) { setMessage(cause instanceof Error ? cause.message : "Unable to sign in."); }
+    finally { setIsSubmitting(false); }
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 sm:px-6">
-      <section className="w-full max-w-md rounded-[22px] border border-slate-200 bg-white px-6 py-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:px-10 sm:py-10">
-        <div className="text-center">
-          <div className="mx-auto grid size-18 place-items-center rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 text-white shadow-lg shadow-blue-500/20">
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-6">
+      <section className="w-full max-w-md rounded-xl border-0 bg-white p-8 shadow-sm backdrop-blur">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 grid size-16 place-items-center rounded-2xl bg-blue-600 text-white">
             <ShieldCheck
-              className="size-9"
+              className="size-8"
               strokeWidth={1.8}
               aria-hidden="true"
             />
           </div>
-          <h1 className="mt-5 text-3xl font-bold tracking-tight text-slate-950">
+          <h1 className="text-2xl font-bold text-slate-900">
             Welcome Back
           </h1>
-          <p className="mt-2 text-lg text-slate-500">Sign in to your account</p>
+          <p className="mt-2 text-sm text-slate-600">Sign in to your account</p>
         </div>
 
-        <form className="mt-10" onSubmit={handleSubmit}>
-          <div className="space-y-5">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <label className="block">
-              <span className="mb-2 block text-base font-medium text-slate-600">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
                 Employee ID
               </span>
               <span className="relative block">
                 <UserRound
-                  className="pointer-events-none absolute left-5 top-1/2 size-6 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400"
                   aria-hidden="true"
                 />
                 <input
@@ -91,13 +90,13 @@ export function LoginForm() {
                   onChange={(event) => setEmployeeId(event.target.value)}
                   required
                   placeholder="Enter your employee ID"
-                  className="h-14 w-full rounded-xl border border-slate-300 bg-white pl-14 pr-5 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </span>
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-base font-medium text-slate-600">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
                 Company
               </span>
               <input
@@ -105,17 +104,17 @@ export function LoginForm() {
                 onChange={(event) => setCompany(event.target.value)}
                 required
                 placeholder="Enter your company or tenant code"
-                className="h-14 w-full rounded-xl border border-slate-300 bg-white px-5 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                className="h-11 w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-base font-medium text-slate-600">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
                 Password
               </span>
               <span className="relative block">
                 <LockKeyhole
-                  className="pointer-events-none absolute left-5 top-1/2 size-6 -translate-y-1/2 text-slate-400"
+                  className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400"
                   aria-hidden="true"
                 />
                 <input
@@ -124,29 +123,29 @@ export function LoginForm() {
                   required
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="h-14 w-full rounded-xl border border-slate-300 bg-white pl-14 pr-14 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-lg border border-slate-300 bg-white py-3 pl-10 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((visible) => !visible)}
-                  className="absolute right-4 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  className="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <EyeOff className="size-6" />
+                    <EyeOff className="size-5" />
                   ) : (
-                    <Eye className="size-6" />
+                    <Eye className="size-5" />
                   )}
                 </button>
               </span>
             </label>
           </div>
 
-          <div className="mt-5 flex items-center justify-between gap-4 text-sm sm:text-base">
-            <label className="flex cursor-pointer items-center gap-3 text-slate-500">
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <label className="flex cursor-pointer items-center gap-2 text-slate-600">
               <input
                 type="checkbox"
-                className="size-5 rounded border-slate-400 accent-blue-600"
+                className="size-4 rounded border-slate-300 accent-blue-600"
               />
               Remember me
             </label>
@@ -160,43 +159,42 @@ export function LoginForm() {
 
           <button
             type="submit"
-            className="mt-6 h-12 w-full rounded-xl bg-linear-to-r from-blue-500 to-blue-700 text-base font-medium text-white shadow-lg shadow-blue-500/15 transition hover:from-blue-600 hover:to-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200"
+            disabled={isSubmitting}
+            className="h-11 w-full rounded-lg bg-blue-600 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Sign In
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
           {message && (
-            <p className="mt-3 text-center text-sm text-blue-600" role="status">
+            <p className="text-center text-sm text-blue-600" role="status">
               {message}
             </p>
           )}
+          <Link
+            href="/"
+            className="flex h-9 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Back to Home
+          </Link>
         </form>
 
-        <Link
-          href="/"
-          className="mx-auto mt-7 flex w-fit items-center gap-3 text-base text-slate-500 transition hover:text-slate-900"
-        >
-          <ArrowLeft className="size-5" aria-hidden="true" />
-          Back to Home
-        </Link>
-
-        <div className="my-10 flex items-center gap-3 text-center text-sm text-slate-500 sm:text-base">
-          <span className="h-px flex-1 bg-slate-300" />
-          <span className="shrink-0">Or continue with demo account</span>
-          <span className="h-px flex-1 bg-slate-300" />
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-slate-500">Or continue with demo account</span>
+            </div>
+          </div>
         </div>
-        <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-slate-600">
-          <span className="font-semibold text-blue-700">OM Demo:</span> ID{" "}
-          <span className="font-medium">OM001</span> · Company{" "}
-          <span className="font-medium">Azovis</span> · Password{" "}
-          <span className="font-medium">om12345</span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-2 gap-2">
           {demoAccounts.map((account) => (
             <button
               key={account.label}
               type="button"
               onClick={() => applyDemoAccount(account)}
-              className="h-11 rounded-xl border border-blue-200 bg-white text-base font-medium text-blue-600 transition hover:border-blue-500 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
+              className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               {account.label}
             </button>
