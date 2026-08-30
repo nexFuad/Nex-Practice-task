@@ -26,3 +26,13 @@
 - [ ] Browser-rendered visual comparison and console check.
 
 final result: blocked
+
+## Employee Registration Form — 2026-08-30
+
+- Source visual truth: supplied `/om/users/create-new-employee` screenshots.
+- Implementation route: `/om/users/create-new-employee`.
+- Implemented surfaces: responsive nine-tab header with Basic selected, profile picker, required basic-details form, Next of Kin, vaccination, site deployment assignment, save and exit controls.
+- Functional checks: frontend ESLint and TypeScript pass; backend TypeScript build and Prisma schema sync pass; `GET /api/users` returns HTTP 200.
+- Browser-rendered visual comparison is blocked because no browser surface is connected in this environment.
+
+final result: blocked

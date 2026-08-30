@@ -26,6 +26,105 @@ model Site {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   siteClients    SiteClient[]
+  userSites      UserSite[]
+}
+
+model User {
+  id                    String     @id @default(cuid())
+  fullName              String
+  employeeId            String     @unique
+  nric                  String?
+  passwordHash          String
+  profileImageUrl       String?
+  dateOfBirth           DateTime?
+  nationality           String
+  gender                String?
+  race                  String?
+  religion              String?
+  phone                 String
+  email                 String?
+  nfcCode               String?
+  address               String?
+  role                  String
+  secondaryRole         String?
+  insurancePlan         String?
+  primaryNokName        String?
+  primaryNokRelationship String?
+  primaryNokLanguage    String?
+  primaryNokPhone       String?
+  secondaryNokName      String?
+  secondaryNokRelationship String?
+  secondaryNokLanguage  String?
+  secondaryNokPhone     String?
+  vaccinated            Boolean?
+  bypassGpsGeofence     Boolean    @default(false)
+  deploymentSiteId      String?
+  status                UserStatus @default(ACTIVE)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  sites                 UserSite[]
+  employmentRecords     EmploymentRecord[]
+  pwmHistory            PwmEmploymentHistory[]
+}
+
+model EmploymentRecord {
+  id               String   @id @default(cuid())
+  userId           String
+  dateJoin         DateTime
+  dateLeft         DateTime?
+  probationPeriod  String?
+  noticePeriod     String?
+  status           String
+  notificationDate DateTime?
+  confirmationDate DateTime?
+  remarks          String?
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PwmEmploymentHistory {
+  id            String   @id @default(cuid())
+  userId        String
+  role          String
+  roleStartDate DateTime
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeRecord {
+  id               String   @id @default(cuid())
+  employeeId       String?
+  dateJoin         DateTime
+  dateLeft         DateTime?
+  probationPeriod  String?
+  noticePeriod     String?
+  status           String
+  notificationDate DateTime?
+  confirmationDate DateTime?
+  remarks          String?
+  createdAt        DateTime @default(now())
+
+  @@index([employeeId])
+}
+
+model PwmEmploymentRecord {
+  id            String   @id @default(cuid())
+  employeeId    String?
+  role          String
+  roleStartDate DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([employeeId])
+}
+
+model UserSite {
+  userId     String
+  siteId     String
+  assignedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@id([userId, siteId])
 }
 
 model Client {
@@ -47,6 +146,11 @@ model SiteClient {
 }
 
 enum SiteStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum UserStatus {
   ACTIVE
   INACTIVE
 }

@@ -5,6 +5,8 @@ import { sitesRoutes } from "./modules/sites/sites.routes.js";
 import { seedSites } from "./modules/sites/sites.seed.js";
 import { clientsRoutes } from "./modules/clients/clients.routes.js";
 import { seedClients } from "./modules/clients/clients.seed.js";
+import { usersRoutes } from "./modules/users/users.routes.js";
+import { employmentRoutes } from "./modules/employment/employment.routes.js";
 
 const app = new Hono();
 
@@ -12,13 +14,23 @@ app.use("/api/*", cors({ origin: "http://localhost:3000" }));
 app.get("/", (c) => c.json({ service: "Guardly API" }));
 app.route("/api/sites", sitesRoutes);
 app.route("/api/clients", clientsRoutes);
+app.route("/api/users", usersRoutes);
+app.route("/api/employment", employmentRoutes);
 
 async function start() {
   await seedSites();
   await seedClients();
   const port = Number(process.env.PORT ?? 3001);
-  serve({ fetch: app.fetch, port }, (info) => {
+  const server = serve({ fetch: app.fetch, port }, (info) => {
     console.log(`Guardly API: http://localhost:${info.port}`);
+  });
+  server.on("error", (error: NodeJS.ErrnoException) => {
+    if (error.code === "EADDRINUSE") {
+      console.log(`Guardly API is already running on http://localhost:${port}.`);
+      process.exit(0);
+    }
+    console.error(error);
+    process.exit(1);
   });
 }
 
