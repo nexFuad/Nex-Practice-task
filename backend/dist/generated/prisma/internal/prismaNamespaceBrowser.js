@@ -39,7 +39,9 @@ export const JsonNull = runtime.JsonNull;
  */
 export const AnyNull = runtime.AnyNull;
 export const ModelName = {
-    Site: 'Site'
+    Site: 'Site',
+    Client: 'Client',
+    SiteClient: 'SiteClient'
 };
 /*
  * Enums
@@ -63,6 +65,17 @@ export const SiteScalarFieldEnum = {
     assignedGuards: 'assignedGuards',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
+};
+export const ClientScalarFieldEnum = {
+    id: 'id',
+    name: 'name',
+    email: 'email',
+    createdAt: 'createdAt'
+};
+export const SiteClientScalarFieldEnum = {
+    siteId: 'siteId',
+    clientId: 'clientId',
+    assignedAt: 'assignedAt'
 };
 export const SortOrder = {
     asc: 'asc',
