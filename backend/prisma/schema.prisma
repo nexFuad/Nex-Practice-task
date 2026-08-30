@@ -25,6 +25,25 @@ model Site {
   assignedGuards Int        @default(0)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+  siteClients    SiteClient[]
+}
+
+model Client {
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  createdAt   DateTime     @default(now())
+  siteClients SiteClient[]
+}
+
+model SiteClient {
+  siteId     String
+  clientId   String
+  assignedAt DateTime @default(now())
+  site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@id([siteId, clientId])
 }
 
 enum SiteStatus {
