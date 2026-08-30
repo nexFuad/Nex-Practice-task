@@ -1,0 +1,1 @@
+export default async function OmSectionPage({ params }: { params: Promise<{ section: string }> }) { const { section } = await params; return <section className="p-5 sm:p-7 lg:p-8"><h1 className="text-2xl font-bold capitalize text-slate-800">{section.replaceAll("-", " ")}</h1><p className="mt-2 text-sm text-slate-500">This page is ready for its module design.</p></section>; }
