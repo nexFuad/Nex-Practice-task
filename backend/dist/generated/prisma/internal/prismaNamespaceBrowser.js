@@ -40,6 +40,12 @@ export const JsonNull = runtime.JsonNull;
 export const AnyNull = runtime.AnyNull;
 export const ModelName = {
     Site: 'Site',
+    User: 'User',
+    EmploymentRecord: 'EmploymentRecord',
+    PwmEmploymentHistory: 'PwmEmploymentHistory',
+    EmployeeRecord: 'EmployeeRecord',
+    PwmEmploymentRecord: 'PwmEmploymentRecord',
+    UserSite: 'UserSite',
     Client: 'Client',
     SiteClient: 'SiteClient'
 };
@@ -65,6 +71,85 @@ export const SiteScalarFieldEnum = {
     assignedGuards: 'assignedGuards',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
+};
+export const UserScalarFieldEnum = {
+    id: 'id',
+    fullName: 'fullName',
+    employeeId: 'employeeId',
+    nric: 'nric',
+    passwordHash: 'passwordHash',
+    profileImageUrl: 'profileImageUrl',
+    dateOfBirth: 'dateOfBirth',
+    nationality: 'nationality',
+    gender: 'gender',
+    race: 'race',
+    religion: 'religion',
+    phone: 'phone',
+    email: 'email',
+    nfcCode: 'nfcCode',
+    address: 'address',
+    role: 'role',
+    secondaryRole: 'secondaryRole',
+    insurancePlan: 'insurancePlan',
+    primaryNokName: 'primaryNokName',
+    primaryNokRelationship: 'primaryNokRelationship',
+    primaryNokLanguage: 'primaryNokLanguage',
+    primaryNokPhone: 'primaryNokPhone',
+    secondaryNokName: 'secondaryNokName',
+    secondaryNokRelationship: 'secondaryNokRelationship',
+    secondaryNokLanguage: 'secondaryNokLanguage',
+    secondaryNokPhone: 'secondaryNokPhone',
+    vaccinated: 'vaccinated',
+    bypassGpsGeofence: 'bypassGpsGeofence',
+    deploymentSiteId: 'deploymentSiteId',
+    status: 'status',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+export const EmploymentRecordScalarFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    dateJoin: 'dateJoin',
+    dateLeft: 'dateLeft',
+    probationPeriod: 'probationPeriod',
+    noticePeriod: 'noticePeriod',
+    status: 'status',
+    notificationDate: 'notificationDate',
+    confirmationDate: 'confirmationDate',
+    remarks: 'remarks',
+    createdAt: 'createdAt'
+};
+export const PwmEmploymentHistoryScalarFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    role: 'role',
+    roleStartDate: 'roleStartDate',
+    createdAt: 'createdAt'
+};
+export const EmployeeRecordScalarFieldEnum = {
+    id: 'id',
+    employeeId: 'employeeId',
+    dateJoin: 'dateJoin',
+    dateLeft: 'dateLeft',
+    probationPeriod: 'probationPeriod',
+    noticePeriod: 'noticePeriod',
+    status: 'status',
+    notificationDate: 'notificationDate',
+    confirmationDate: 'confirmationDate',
+    remarks: 'remarks',
+    createdAt: 'createdAt'
+};
+export const PwmEmploymentRecordScalarFieldEnum = {
+    id: 'id',
+    employeeId: 'employeeId',
+    role: 'role',
+    roleStartDate: 'roleStartDate',
+    createdAt: 'createdAt'
+};
+export const UserSiteScalarFieldEnum = {
+    userId: 'userId',
+    siteId: 'siteId',
+    assignedAt: 'assignedAt'
 };
 export const ClientScalarFieldEnum = {
     id: 'id',

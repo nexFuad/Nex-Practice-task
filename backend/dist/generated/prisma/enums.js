@@ -11,3 +11,7 @@ export const SiteStatus = {
     ACTIVE: 'ACTIVE',
     INACTIVE: 'INACTIVE'
 };
+export const UserStatus = {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE'
+};
