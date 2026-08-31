@@ -45,6 +45,7 @@ export const ModelName = {
     PwmEmploymentHistory: 'PwmEmploymentHistory',
     EmployeeRecord: 'EmployeeRecord',
     PwmEmploymentRecord: 'PwmEmploymentRecord',
+    AttendanceRecord: 'AttendanceRecord',
     UserSite: 'UserSite',
     Client: 'Client',
     SiteClient: 'SiteClient'
@@ -147,6 +148,29 @@ export const PwmEmploymentRecordScalarFieldEnum = {
     role: 'role',
     roleStartDate: 'roleStartDate',
     createdAt: 'createdAt'
+};
+export const AttendanceRecordScalarFieldEnum = {
+    id: 'id',
+    employeeId: 'employeeId',
+    employeeName: 'employeeName',
+    siteId: 'siteId',
+    siteName: 'siteName',
+    siteCode: 'siteCode',
+    shiftDate: 'shiftDate',
+    shiftStart: 'shiftStart',
+    shiftEnd: 'shiftEnd',
+    shiftType: 'shiftType',
+    checkInAt: 'checkInAt',
+    checkOutAt: 'checkOutAt',
+    checkInLatitude: 'checkInLatitude',
+    checkInLongitude: 'checkInLongitude',
+    checkOutLatitude: 'checkOutLatitude',
+    checkOutLongitude: 'checkOutLongitude',
+    checkInImageUrl: 'checkInImageUrl',
+    checkOutImageUrl: 'checkOutImageUrl',
+    status: 'status',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
 };
 export const UserSiteScalarFieldEnum = {
     userId: 'userId',

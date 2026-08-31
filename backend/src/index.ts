@@ -9,6 +9,7 @@ import { usersRoutes } from "./modules/users/users.routes.js";
 import { employmentRoutes } from "./modules/employment/employment.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { seedDemoLogin } from "./modules/auth/auth.seed.js";
+import { attendanceRoutes } from "./modules/attendance/attendance.routes.js";
 
 const app = new Hono();
 
@@ -19,6 +20,7 @@ app.route("/api/clients", clientsRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/employment", employmentRoutes);
 app.route("/api/auth", authRoutes);
+app.route("/api/attendance", attendanceRoutes);
 
 async function start() {
   await seedSites();

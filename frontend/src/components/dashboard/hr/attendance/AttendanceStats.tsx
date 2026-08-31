@@ -1,0 +1,4 @@
+export function AttendanceStats({ total, onDuty, completed }: { total: number; onDuty: number; completed: number }) {
+  const cards = [["Total", total, "Unique working days in selected month", "bg-slate-100 text-slate-700"], ["On Duty", onDuty, "Working days currently in progress", "bg-emerald-600 text-white"], ["Completed", completed, "Completed working days", "bg-blue-600 text-white"]];
+  return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{cards.map(([label, value, description, tone]) => <section key={String(label)} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span><p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p><p className="mt-2 text-xs text-slate-500">{description}</p></section>)}</div>;
+}
