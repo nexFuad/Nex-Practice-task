@@ -15,3 +15,8 @@ export const UserStatus = {
     ACTIVE: 'ACTIVE',
     INACTIVE: 'INACTIVE'
 };
+export const AttendanceStatus = {
+    ON_DUTY: 'ON_DUTY',
+    COMPLETED: 'COMPLETED',
+    ABSENT: 'ABSENT'
+};

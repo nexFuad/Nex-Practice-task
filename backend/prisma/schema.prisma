@@ -119,6 +119,33 @@ model PwmEmploymentRecord {
   @@index([employeeId])
 }
 
+model AttendanceRecord {
+  id                  String   @id @default(cuid())
+  employeeId          String
+  employeeName        String
+  siteId              String?
+  siteName            String?
+  siteCode            String?
+  shiftDate           DateTime
+  shiftStart          String
+  shiftEnd            String
+  shiftType           String?
+  checkInAt           DateTime?
+  checkOutAt          DateTime?
+  checkInLatitude     Float?
+  checkInLongitude    Float?
+  checkOutLatitude    Float?
+  checkOutLongitude   Float?
+  checkInImageUrl     String?
+  checkOutImageUrl    String?
+  status              AttendanceStatus @default(COMPLETED)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([shiftDate])
+}
+
 model UserSite {
   userId     String
   siteId     String
@@ -155,4 +182,10 @@ enum SiteStatus {
 enum UserStatus {
   ACTIVE
   INACTIVE
+}
+
+enum AttendanceStatus {
+  ON_DUTY
+  COMPLETED
+  ABSENT
 }
