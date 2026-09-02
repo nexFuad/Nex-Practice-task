@@ -35,7 +35,8 @@ authRoutes.post("/login", async (c) => {
   if (!account || account.company.toLowerCase() !== input.company.trim().toLowerCase() || !await bcrypt.compare(input.password, account.passwordHash)) return c.json({ message: "Invalid employee ID, company or password." }, 401);
   const role = normalizeRole(account.role);
   const dashboardPath = role === "ADMIN" ? "/admin/dashboard" : role === "OFFICER" ? "/officer/dashboard" : "/om/dashboard";
-  setCookie(c, sessionCookieName, createSessionToken({ accountId: account.id, userId: account.user.id, employeeId: account.employeeId, role }), { httpOnly: true, sameSite: "Lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 8 });
+  const production = process.env.NODE_ENV === "production";
+  setCookie(c, sessionCookieName, createSessionToken({ accountId: account.id, userId: account.user.id, employeeId: account.employeeId, role }), { httpOnly: true, sameSite: production ? "None" : "Lax", secure: production, path: "/", maxAge: 60 * 60 * 8 });
   const { passwordHash: _, ...safeAccount } = account;
   return c.json({ user: profileResponse(safeAccount), dashboardPath });
 });
