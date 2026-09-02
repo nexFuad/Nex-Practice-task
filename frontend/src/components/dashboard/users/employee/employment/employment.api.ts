@@ -26,6 +26,7 @@ export type SavedEmployment = {
 export async function getSavedEmployment(employeeId?: string) {
   const response = await fetch(
     `${apiBaseUrl}/api/employment${employeeId ? `?employeeId=${encodeURIComponent(employeeId)}` : ""}`,
+    { credentials: "include" },
   );
   if (!response.ok) throw new Error("Unable to load saved employment records.");
   return response.json() as Promise<SavedEmployment>;
@@ -37,6 +38,7 @@ export async function saveEmploymentDraft(payload: {
 }) {
   const response = await fetch(`${apiBaseUrl}/api/employment/commit`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });

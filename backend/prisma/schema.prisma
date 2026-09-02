@@ -295,9 +295,11 @@ model PwmEmploymentRecord {
 
 model AttendanceRecord {
   id                  String   @id @default(cuid())
+  userId              String?
   employeeId          String
   employeeName        String
   siteId              String?
+  shiftId             String?
   siteName            String?
   siteCode            String?
   shiftDate           DateTime
@@ -310,10 +312,20 @@ model AttendanceRecord {
   checkInLongitude    Float?
   checkInLocationAccuracy Float?
   checkInLocationCapturedAt DateTime?
+  checkInDistanceMeters Float?
+  checkInAllowedRadius Int?
+  checkInValidationStatus String?
+  checkInTimingStatus String?
+  checkInVarianceMinutes Int?
   checkOutLatitude    Float?
   checkOutLongitude   Float?
   checkOutLocationAccuracy Float?
   checkOutLocationCapturedAt DateTime?
+  checkOutDistanceMeters Float?
+  checkOutAllowedRadius Int?
+  checkOutValidationStatus String?
+  checkOutTimingStatus String?
+  checkOutVarianceMinutes Int?
   checkInImageUrl     String?
   checkOutImageUrl    String?
   status              AttendanceStatus @default(COMPLETED)
@@ -321,6 +333,8 @@ model AttendanceRecord {
   updatedAt           DateTime @updatedAt
 
   @@index([employeeId])
+  @@index([userId])
+  @@index([shiftId])
   @@index([shiftDate])
 }
 

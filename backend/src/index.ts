@@ -11,16 +11,33 @@ import { authRoutes } from "./modules/auth/auth.routes.js";
 import { seedDemoLogin } from "./modules/auth/auth.seed.js";
 import { attendanceRoutes } from "./modules/attendance/attendance.routes.js";
 import { shiftsRoutes } from "./modules/shifts/shifts.routes.js";
+import { dashboardRoutes } from "./modules/dashboard/dashboard.routes.js";
+import { requireRoles } from "./modules/auth/auth.guard.js";
+import { officerAttendanceRoutes } from "./modules/attendance/officer-attendance.routes.js";
 
 const app = new Hono();
 
-app.use("/api/*", cors({ origin: "http://localhost:3000" }));
+app.use("/api/*", cors({ origin: "http://localhost:3000", credentials: true }));
 app.get("/", (c) => c.json({ service: "Guardly API" }));
+app.route("/api/auth", authRoutes);
+app.route("/api/dashboard", dashboardRoutes);
+app.route("/api/officer/attendance", officerAttendanceRoutes);
+app.use("/api/sites/*", requireRoles(["ADMIN", "OM"]));
+app.use("/api/sites", requireRoles(["ADMIN", "OM"]));
+app.use("/api/clients/*", requireRoles(["ADMIN", "OM"]));
+app.use("/api/clients", requireRoles(["ADMIN", "OM"]));
+app.use("/api/users/*", requireRoles(["ADMIN", "OM"]));
+app.use("/api/users", requireRoles(["ADMIN", "OM"]));
+app.use("/api/employment/*", requireRoles(["ADMIN", "OM"]));
+app.use("/api/employment", requireRoles(["ADMIN", "OM"]));
+app.use("/api/attendance/*", requireRoles(["ADMIN", "OM"]));
+app.use("/api/attendance", requireRoles(["ADMIN", "OM"]));
+app.use("/api/shifts/*", requireRoles(["ADMIN", "OM"]));
+app.use("/api/shifts", requireRoles(["ADMIN", "OM"]));
 app.route("/api/sites", sitesRoutes);
 app.route("/api/clients", clientsRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/employment", employmentRoutes);
-app.route("/api/auth", authRoutes);
 app.route("/api/attendance", attendanceRoutes);
 app.route("/api/shifts", shiftsRoutes);
 
