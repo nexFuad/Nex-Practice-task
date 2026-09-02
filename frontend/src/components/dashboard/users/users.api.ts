@@ -8,7 +8,7 @@ type ApiUser = {
   email: string | null;
   phone: string;
   role: string;
-  status: "ACTIVE" | "INACTIVE";
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "RESIGNED";
   sites: { site: { name: string } }[];
 };
 export type CreateUserPayload = Record<
@@ -24,9 +24,12 @@ const request = async <T>(url: string, options?: RequestInit) => {
     const body = await response.json().catch(() => null);
     throw new Error(body?.message ?? "Unable to complete the request.");
   }
-  return response.json() as Promise<T>;
+  return response.status === 204
+    ? (undefined as T)
+    : (response.json() as Promise<T>);
 };
 const asUser = (user: ApiUser): DemoUser => ({
+  databaseId: user.id,
   id: user.employeeId,
   name: user.fullName,
   email: user.email ?? undefined,
@@ -48,5 +51,99 @@ export async function createUser(payload: CreateUserPayload) {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  );
+}
+
+export type EditableEmployee = CreateUserPayload & { profileImageUrl?: string };
+
+export function getUser(employeeId: string) {
+  return request<EditableEmployee>(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}`,
+  );
+}
+
+export function updateUser(employeeId: string, payload: CreateUserPayload) {
+  return request<ApiUser>(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}`,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+}
+
+export type AssignedSite = { id: string; name: string; code: string };
+export type UserScheduleRecord = {
+  id: string;
+  shiftDate: string;
+  shiftStart: string;
+  shiftEnd: string;
+  siteName: string | null;
+  status: string;
+};
+
+export function saveUserSites(employeeId: string, siteIds: string[]) {
+  return request<AssignedSite[]>(`${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}/sites`, {
+    method: "PATCH",
+    body: JSON.stringify({ siteIds }),
+  });
+}
+
+export function getUserSchedule(employeeId: string) {
+  return request<UserScheduleRecord[]>(`${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}/schedule`);
+}
+
+export function resetUserPassword(employeeId: string, password: string) {
+  return request<{ message: string }>(`${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}/password`, {
+    method: "PATCH",
+    body: JSON.stringify({ password }),
+  });
+}
+
+export function setUserStatus(
+  employeeId: string,
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED",
+) {
+  return request<{ message: string }>(`${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function resignUser(employeeId: string, lastWorkingDay: string) {
+  return request<{ message: string }>(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}/resignation`,
+    { method: "PATCH", body: JSON.stringify({ lastWorkingDay }) },
+  );
+}
+
+export function activateUser(employeeId: string) {
+  return request<{ message: string }>(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}/activation`,
+    { method: "PATCH" },
+  );
+}
+
+export async function deleteUser(employeeId: string) {
+  await request<void>(`${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}`, { method: "DELETE" });
+}
+
+export type PayrollPayload = {
+  profile: Record<string, string | string[]>;
+  bankAccounts: Record<string, string>[];
+  earnings: Record<string, string>[];
+  deductions: Record<string, string | boolean>[];
+};
+
+export function getUserPayroll(userId: string) {
+  return request<PayrollPayload>(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(userId)}/payroll`,
+  );
+}
+
+export function updateUserPayroll(
+  userId: string,
+  payload: PayrollPayload,
+) {
+  return request<PayrollPayload>(
+    `${apiBaseUrl}/api/users/${encodeURIComponent(userId)}/payroll`,
+    { method: "PUT", body: JSON.stringify(payload) },
   );
 }

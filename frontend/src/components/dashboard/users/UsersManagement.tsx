@@ -7,8 +7,11 @@ import { UserStats } from "./UserStats";
 import { UsersFilters } from "./UsersFilters";
 import { UsersPagination } from "./UsersPagination";
 import { UsersTable, UsersTableSkeleton } from "./UsersTable";
+import { UserActionDialog } from "./UserActionDialog";
+import { Toast } from "../sites/Toast";
+import type { UserMenuAction } from "./UserActionsMenu";
 import type { UserRole, UserStatus } from "./types";
-import { getUsers } from "./users.api";
+import { deleteUser, getUsers } from "./users.api";
 import type { DemoUser } from "./types";
 
 const PAGE_SIZE = 10;
@@ -21,10 +24,13 @@ export function UsersManagement() {
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [databaseUsers, setDatabaseUsers] = useState<DemoUser[]>([]);
+  const [activeAction, setActiveAction] = useState<{ user: DemoUser; action: UserMenuAction } | null>(null);
+  const [toast, setToast] = useState("");
+  const loadUsers = () => {
+    getUsers().then(setDatabaseUsers).catch(() => undefined);
+  };
   useEffect(() => {
-    getUsers()
-      .then(setDatabaseUsers)
-      .catch(() => undefined);
+    loadUsers();
   }, []);
   const allUsers = databaseUsers;
   const filteredUsers = useMemo(
@@ -59,6 +65,20 @@ export function UsersManagement() {
       setPage(next);
       setIsPageLoading(false);
     }, 450);
+  };
+  const deleteUserFromMenu = async (user: DemoUser) => {
+    try {
+      await deleteUser(user.databaseId);
+      setDatabaseUsers((current) =>
+        current.filter((item) => item.databaseId !== user.databaseId),
+      );
+      setToast(`${user.name} was deleted successfully.`);
+    } catch (cause) {
+      console.error("Unable to delete user:", cause);
+      window.alert(
+        cause instanceof Error ? cause.message : "Unable to delete user.",
+      );
+    }
   };
   return (
     <section className="min-w-0 px-5 pb-5 pt-2 text-slate-800">
@@ -109,6 +129,8 @@ export function UsersManagement() {
               setOpenMenuId((current) => (current === id ? null : id))
             }
             onCloseMenu={() => setOpenMenuId(null)}
+            onAction={(user, action) => setActiveAction({ user, action })}
+            onDeleteUser={deleteUserFromMenu}
           />
         )}
       <UsersPagination
@@ -118,6 +140,8 @@ export function UsersManagement() {
       />
       </section>
       </div>
+      {activeAction && <UserActionDialog user={activeAction.user} action={activeAction.action} onClose={() => setActiveAction(null)} onChanged={loadUsers} onToast={setToast} onDeleted={(databaseId) => setDatabaseUsers((current) => current.filter((user) => user.databaseId !== databaseId))} />}
+      {toast && <Toast message={toast} onClose={() => setToast("")} />}
     </section>
   );
 }

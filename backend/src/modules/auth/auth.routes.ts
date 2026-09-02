@@ -3,30 +3,56 @@ import { Hono } from "hono";
 import { prisma } from "../../lib/prisma.js";
 
 const authRoutes = new Hono();
-const publicProfile = { id: true, employeeId: true, fullName: true, company: true, email: true, role: true, profileImageUrl: true, passwordChangedAt: true } as const;
+const accountWithProfile = {
+  id: true,
+  employeeId: true,
+  company: true,
+  role: true,
+  passwordChangedAt: true,
+  fullName: true,
+  email: true,
+  profileImageUrl: true,
+  user: { select: { id: true, basic: { select: { fullName: true, email: true } } } },
+} as const;
 const normalizedId = (employeeId: string) => employeeId.trim().toLowerCase();
+const profileResponse = (account: { id: string; employeeId: string; company: string; role: string; passwordChangedAt: Date; fullName: string; email: string | null; profileImageUrl: string | null; user: { basic: { fullName: string; email: string | null } | null } }) => ({
+  id: account.id,
+  employeeId: account.employeeId,
+  fullName: account.fullName,
+  company: account.company,
+  email: account.email ?? account.user.basic?.email,
+  role: account.role,
+  profileImageUrl: account.profileImageUrl,
+  passwordChangedAt: account.passwordChangedAt,
+});
 
 authRoutes.post("/login", async (c) => {
   const input = await c.req.json<{ employeeId?: string; company?: string; password?: string; accountType?: string }>();
   if (!input.employeeId?.trim() || !input.company?.trim() || !input.password) return c.json({ message: "Employee ID, company and password are required." }, 400);
-  const user = await prisma.user.findUnique({ where: { employeeId: normalizedId(input.employeeId) }, select: { ...publicProfile, passwordHash: true } });
-  if (!user || user.company.toLowerCase() !== input.company.trim().toLowerCase() || !await bcrypt.compare(input.password, user.passwordHash)) return c.json({ message: "Invalid employee ID, company or password." }, 401);
+  const account = await prisma.account.findUnique({ where: { employeeId: normalizedId(input.employeeId) }, select: { ...accountWithProfile, passwordHash: true } });
+  if (!account || account.company.toLowerCase() !== input.company.trim().toLowerCase() || !await bcrypt.compare(input.password, account.passwordHash)) return c.json({ message: "Invalid employee ID, company or password." }, 401);
   const accountType = input.accountType?.toLowerCase() ?? "";
   const dashboardPath = accountType.includes("admin") ? "/admin/dashboard" : accountType.includes("officer") ? "/officer/dashboard" : "/om/dashboard";
-  const { passwordHash: _, ...profile } = user;
-  return c.json({ user: profile, dashboardPath });
+  const { passwordHash: _, ...safeAccount } = account;
+  return c.json({ user: profileResponse(safeAccount), dashboardPath });
 });
 
 authRoutes.get("/profile/:employeeId", async (c) => {
-  const user = await prisma.user.findUnique({ where: { employeeId: normalizedId(c.req.param("employeeId")) }, select: publicProfile });
-  return user ? c.json(user) : c.json({ message: "Profile not found." }, 404);
+  const account = await prisma.account.findUnique({ where: { employeeId: normalizedId(c.req.param("employeeId")) }, select: accountWithProfile });
+  return account ? c.json(profileResponse(account)) : c.json({ message: "Profile not found." }, 404);
 });
 
 authRoutes.patch("/profile/:employeeId", async (c) => {
   const input = await c.req.json<{ fullName?: string; profileImageUrl?: string | null }>();
   if (!input.fullName?.trim()) return c.json({ message: "Full name is required." }, 400);
-  const user = await prisma.user.update({ where: { employeeId: normalizedId(c.req.param("employeeId")) }, data: { fullName: input.fullName.trim(), profileImageUrl: input.profileImageUrl?.trim() || null }, select: publicProfile }).catch(() => null);
-  return user ? c.json(user) : c.json({ message: "Profile not found." }, 404);
+  const employeeId = normalizedId(c.req.param("employeeId"));
+  const existing = await prisma.account.findUnique({ where: { employeeId }, select: { id: true, userId: true } });
+  if (!existing) return c.json({ message: "Profile not found." }, 404);
+  const account = await prisma.account.update({ where: { id: existing.id }, data: {
+    fullName: input.fullName.trim(), profileImageUrl: input.profileImageUrl?.trim() || null,
+  }, select: accountWithProfile });
+  await prisma.user.update({ where: { id: existing.userId }, data: { fullName: input.fullName.trim(), profileImageUrl: input.profileImageUrl?.trim() || null, basic: { upsert: { create: { fullName: input.fullName.trim() }, update: { fullName: input.fullName.trim() } } }, profile: { upsert: { create: { profileImageUrl: input.profileImageUrl?.trim() || null }, update: { profileImageUrl: input.profileImageUrl?.trim() || null } } } } });
+  return c.json(profileResponse(account));
 });
 
 authRoutes.patch("/profile/:employeeId/password", async (c) => {
@@ -35,9 +61,9 @@ authRoutes.patch("/profile/:employeeId/password", async (c) => {
   if (input.newPassword.length < 6) return c.json({ message: "New password must have at least 6 characters." }, 400);
   if (input.newPassword !== input.confirmPassword) return c.json({ message: "New password and confirmation do not match." }, 400);
   const employeeId = normalizedId(c.req.param("employeeId"));
-  const user = await prisma.user.findUnique({ where: { employeeId }, select: { passwordHash: true } });
-  if (!user || !await bcrypt.compare(input.currentPassword, user.passwordHash)) return c.json({ message: "Current password is incorrect." }, 400);
-  const updated = await prisma.user.update({ where: { employeeId }, data: { passwordHash: await bcrypt.hash(input.newPassword, 10), passwordChangedAt: new Date() }, select: publicProfile });
-  return c.json(updated);
+  const account = await prisma.account.findUnique({ where: { employeeId }, select: { passwordHash: true } });
+  if (!account || !await bcrypt.compare(input.currentPassword, account.passwordHash)) return c.json({ message: "Current password is incorrect." }, 400);
+  const updated = await prisma.account.update({ where: { employeeId }, data: { passwordHash: await bcrypt.hash(input.newPassword, 10), passwordChangedAt: new Date() }, select: accountWithProfile });
+  return c.json(profileResponse(updated));
 });
 export { authRoutes };

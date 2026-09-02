@@ -1,8 +1,10 @@
 export type UserInput = {
   fullName: string;
   employeeId: string;
+  company?: string;
   nric?: string;
-  password: string;
+  employmentType?: string;
+  password?: string;
   profileImageUrl?: string;
   dateOfBirth?: string;
   nationality: string;
@@ -12,6 +14,7 @@ export type UserInput = {
   phone: string;
   email?: string;
   nfcCode?: string;
+  maritalStatus?: string;
   address?: string;
   role: string;
   secondaryRole?: string;

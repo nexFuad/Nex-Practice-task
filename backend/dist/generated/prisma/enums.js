@@ -13,10 +13,15 @@ export const SiteStatus = {
 };
 export const UserStatus = {
     ACTIVE: 'ACTIVE',
-    INACTIVE: 'INACTIVE'
+    INACTIVE: 'INACTIVE',
+    SUSPENDED: 'SUSPENDED'
 };
 export const AttendanceStatus = {
     ON_DUTY: 'ON_DUTY',
     COMPLETED: 'COMPLETED',
     ABSENT: 'ABSENT'
+};
+export const ShiftStatus = {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE'
 };

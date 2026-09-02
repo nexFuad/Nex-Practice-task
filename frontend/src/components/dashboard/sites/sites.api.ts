@@ -37,8 +37,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return response.status === 204 ? (undefined as T) : response.json();
 }
 
-export async function getSites() {
-  return (await request<ApiSite[]>(sitesUrl)).map(toSite);
+export async function getSites(status?: SiteStatus) {
+  const url = status ? `${sitesUrl}?status=${encodeURIComponent(status)}` : sitesUrl;
+  return (await request<ApiSite[]>(url)).map(toSite);
 }
 
 export async function createSite(payload: SitePayload) {

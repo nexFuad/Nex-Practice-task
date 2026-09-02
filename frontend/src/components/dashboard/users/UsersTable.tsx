@@ -1,20 +1,25 @@
 import { Mail, MapPin, Phone, UserRoundCheck } from "lucide-react";
 import type { DemoUser } from "./types";
 import { UserActionsMenu } from "./UserActionsMenu";
+import type { UserMenuAction } from "./UserActionsMenu";
 
 export function UsersTable({
   users,
   openMenuId,
   onToggleMenu,
   onCloseMenu,
+  onAction,
+  onDeleteUser,
 }: {
   users: DemoUser[];
   openMenuId: string | null;
   onToggleMenu: (id: string) => void;
   onCloseMenu: () => void;
+  onAction: (user: DemoUser, action: UserMenuAction) => void;
+  onDeleteUser: (user: DemoUser) => Promise<void>;
 }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="max-w-full overflow-x-auto">
       <table className="min-w-[980px] w-full text-sm">
         <thead className="border-b border-slate-200 text-left text-slate-900">
           <tr>
@@ -29,7 +34,7 @@ export function UsersTable({
         <tbody>
           {users.map((user) => (
             <tr
-              key={user.id}
+              key={user.databaseId}
               className="border-b border-slate-200 transition-colors hover:bg-slate-50 last:border-b-0"
             >
               <td className="p-2 whitespace-nowrap">
@@ -70,7 +75,7 @@ export function UsersTable({
               </td>
               <td className="p-2 whitespace-nowrap">
                 <span
-                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${user.status === "ACTIVE" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}
+                  className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${user.status === "ACTIVE" ? "bg-emerald-100 text-emerald-800" : user.status === "SUSPENDED" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}
                 >
                   <UserRoundCheck className="size-3" />
                   {user.status}
@@ -78,9 +83,13 @@ export function UsersTable({
               </td>
               <td className="p-2 text-right">
                 <UserActionsMenu
-                  open={openMenuId === user.id}
-                  onToggle={() => onToggleMenu(user.id)}
+                  open={openMenuId === user.databaseId}
+                  onToggle={() => onToggleMenu(user.databaseId)}
                   onClose={onCloseMenu}
+                  userId={user.databaseId}
+                  userStatus={user.status}
+                  onAction={(action) => onAction(user, action)}
+                  onDelete={() => onDeleteUser(user)}
                 />
               </td>
             </tr>

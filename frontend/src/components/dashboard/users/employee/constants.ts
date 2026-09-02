@@ -26,11 +26,5 @@ export const languages = ["English", "Malay", "Chinese", "Tamil"];
 export const tabs = [
   "Basic",
   "Employment",
-  "Document",
   "Payroll",
-  "Payslip",
-  "Certification",
-  "PWM Rank",
-  "KETs",
-  "Education",
 ];
