@@ -14,8 +14,12 @@ type AttendanceInput = {
   checkOutAt?: string;
   checkInLatitude?: number | null;
   checkInLongitude?: number | null;
+  checkInLocationAccuracy?: number | null;
+  checkInLocationCapturedAt?: string | null;
   checkOutLatitude?: number | null;
   checkOutLongitude?: number | null;
+  checkOutLocationAccuracy?: number | null;
+  checkOutLocationCapturedAt?: string | null;
   checkInImageUrl?: string;
   checkOutImageUrl?: string;
   status?: "ON_DUTY" | "COMPLETED" | "ABSENT";
@@ -29,14 +33,14 @@ async function dataFor(input: AttendanceInput) {
   if (!clean(input.employeeId) || !validDate(input.shiftDate) || !clean(input.shiftStart) || !clean(input.shiftEnd)) {
     throw new Error("Employee, shift date, start time and end time are required.");
   }
-  const employee = await prisma.user.findUnique({ where: { employeeId: input.employeeId!.trim() }, select: { employeeId: true, fullName: true } });
+  const employee = await prisma.user.findUnique({ where: { employeeId: input.employeeId!.trim() }, select: { employeeId: true, fullName: true, basic: { select: { fullName: true } } } });
   if (!employee) throw new Error("Selected employee was not found.");
   const site = clean(input.siteId) ? await prisma.site.findUnique({ where: { id: input.siteId!.trim() }, select: { id: true, name: true, code: true } }) : null;
   if (clean(input.siteId) && !site) throw new Error("Selected site was not found.");
   const status = input.status ?? (input.checkOutAt ? "COMPLETED" : "ON_DUTY");
   return {
     employeeId: employee.employeeId,
-    employeeName: employee.fullName,
+    employeeName: employee.basic?.fullName ?? employee.fullName,
     siteId: site?.id,
     siteName: site?.name,
     siteCode: site?.code,
@@ -48,8 +52,12 @@ async function dataFor(input: AttendanceInput) {
     checkOutAt: asDate(input.checkOutAt),
     checkInLatitude: input.checkInLatitude ?? undefined,
     checkInLongitude: input.checkInLongitude ?? undefined,
+    checkInLocationAccuracy: input.checkInLocationAccuracy ?? undefined,
+    checkInLocationCapturedAt: asDate(input.checkInLocationCapturedAt ?? undefined),
     checkOutLatitude: input.checkOutLatitude ?? undefined,
     checkOutLongitude: input.checkOutLongitude ?? undefined,
+    checkOutLocationAccuracy: input.checkOutLocationAccuracy ?? undefined,
+    checkOutLocationCapturedAt: asDate(input.checkOutLocationCapturedAt ?? undefined),
     checkInImageUrl: clean(input.checkInImageUrl),
     checkOutImageUrl: clean(input.checkOutImageUrl),
     status,

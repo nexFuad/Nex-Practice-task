@@ -10,6 +10,7 @@ import { employmentRoutes } from "./modules/employment/employment.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { seedDemoLogin } from "./modules/auth/auth.seed.js";
 import { attendanceRoutes } from "./modules/attendance/attendance.routes.js";
+import { shiftsRoutes } from "./modules/shifts/shifts.routes.js";
 const app = new Hono();
 app.use("/api/*", cors({ origin: "http://localhost:3000" }));
 app.get("/", (c) => c.json({ service: "Guardly API" }));
@@ -19,6 +20,7 @@ app.route("/api/users", usersRoutes);
 app.route("/api/employment", employmentRoutes);
 app.route("/api/auth", authRoutes);
 app.route("/api/attendance", attendanceRoutes);
+app.route("/api/shifts", shiftsRoutes);
 async function start() {
     await seedSites();
     await seedClients();

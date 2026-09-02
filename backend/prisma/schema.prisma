@@ -35,9 +35,6 @@ model User {
   employeeId            String     @unique
   company               String     @default("fuad")
   nric                  String?
-  passwordHash          String
-  passwordChangedAt     DateTime   @default(now())
-  profileImageUrl       String?
   dateOfBirth           DateTime?
   nationality           String
   gender                String?
@@ -47,6 +44,9 @@ model User {
   email                 String?
   nfcCode               String?
   address               String?
+  passwordHash          String
+  passwordChangedAt     DateTime   @default(now())
+  profileImageUrl       String?
   role                  String
   secondaryRole         String?
   insurancePlan         String?
@@ -65,8 +65,182 @@ model User {
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
   sites                 UserSite[]
+  account               Account?
+  basic                 EmployeeBasic?
+  profile               UserProfile?
+  nextOfKin             EmployeeNextOfKin[]
   employmentRecords     EmploymentRecord[]
   pwmHistory            PwmEmploymentHistory[]
+  payrollRecords        EmployeePayroll[]
+  payrollProfile        EmployeePayrollProfile?
+}
+
+model Account {
+  id                String     @id @default(cuid())
+  userId            String     @unique
+  employeeId        String     @unique
+  fullName          String
+  company           String     @default("fuad")
+  email             String?
+  profileImageUrl   String?
+  passwordHash      String
+  passwordChangedAt DateTime   @default(now())
+  role              String
+  status            UserStatus @default(ACTIVE)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@map("accounts")
+}
+
+// HR/basic-form data is deliberately separate from the account used to sign in.
+// `User` remains the identity/authentication table; this table stores the Basic tab.
+model EmployeeBasic {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  fullName              String
+  nric                  String?
+  employmentType        String?
+  dateOfBirth           DateTime?
+  nationality           String?
+  gender                String?
+  race                  String?
+  religion              String?
+  phone                 String?
+  email                 String?
+  nfcCode               String?
+  maritalStatus         String?
+  address               String?
+  secondaryRole         String?
+  insurancePlan         String?
+  vaccinated            Boolean?
+  bypassGpsGeofence     Boolean  @default(false)
+  deploymentSiteId      String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([fullName])
+  @@index([deploymentSiteId])
+}
+
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  profileImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeNextOfKin {
+  id           String   @id @default(cuid())
+  userId       String
+  priority     Int
+  name         String?
+  relationship String?
+  language     String?
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, priority])
+}
+
+model EmployeePayroll {
+  id          String   @id @default(cuid())
+  userId      String
+  payPeriod   String
+  basicSalary Decimal? @db.Decimal(12, 2)
+  currency    String   @default("SGD")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, payPeriod])
+}
+
+model EmployeePayrollProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  workingDays           String?
+  restDaysPerMonth      Int?
+  workingHoursPerWeek   Float?
+  fixedRestDays         String?
+  basicSalary           Decimal? @db.Decimal(12, 2)
+  decimalPlaces         Int      @default(2)
+  dailyRate             Decimal? @db.Decimal(12, 2)
+  hourlyRate            Decimal? @db.Decimal(12, 2)
+  otHourlyRate          Decimal? @db.Decimal(12, 2)
+  excessDailyRate       Decimal? @db.Decimal(12, 2)
+  excessHourlyRate      Decimal? @db.Decimal(12, 2)
+  fixedBasicSalary      Decimal? @db.Decimal(12, 2)
+  fixedGrossSalary      Decimal? @db.Decimal(12, 2)
+  basicHours            Float?
+  breakTime             Float?
+  maximumOtHours        Float?
+  advancePaymentType    String?
+  calculationType       String?
+  cpfType               String?
+  cpfEffectiveDate      DateTime?
+  levyType              String?
+  employeeSkillType     String?
+  selfHelpGroups        String[] @default([])
+  sdlCalculation        String?
+  paymentMethod         String?
+  paymentRemarks        String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankAccounts          EmployeePayrollBankAccount[]
+  earnings              EmployeePayrollEarning[]
+  deductions            EmployeePayrollDeduction[]
+}
+
+model EmployeePayrollBankAccount {
+  id            String   @id @default(cuid())
+  payrollId     String
+  bank          String
+  accountName   String
+  accountNumber String
+  branchCode    String
+  bankCode      String?
+  swiftCode     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  payroll       EmployeePayrollProfile @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([payrollId])
+}
+
+model EmployeePayrollEarning {
+  id          String   @id @default(cuid())
+  payrollId   String
+  name        String
+  amount      Decimal? @db.Decimal(12, 2)
+  calculationRule String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  payroll     EmployeePayrollProfile @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([payrollId])
+}
+
+model EmployeePayrollDeduction {
+  id                  String   @id @default(cuid())
+  payrollId           String
+  name                String
+  amount              Decimal? @db.Decimal(12, 2)
+  accountNumber       String?
+  deductBeforeGross   Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  payroll             EmployeePayrollProfile @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([payrollId])
 }
 
 model EmploymentRecord {
@@ -134,8 +308,12 @@ model AttendanceRecord {
   checkOutAt          DateTime?
   checkInLatitude     Float?
   checkInLongitude    Float?
+  checkInLocationAccuracy Float?
+  checkInLocationCapturedAt DateTime?
   checkOutLatitude    Float?
   checkOutLongitude   Float?
+  checkOutLocationAccuracy Float?
+  checkOutLocationCapturedAt DateTime?
   checkInImageUrl     String?
   checkOutImageUrl    String?
   status              AttendanceStatus @default(COMPLETED)
@@ -144,6 +322,29 @@ model AttendanceRecord {
 
   @@index([employeeId])
   @@index([shiftDate])
+}
+
+model Shift {
+  id              String      @id @default(cuid())
+  companyId       String      @default("default")
+  name            String
+  code            String
+  category        String      @default("Main")
+  color           String      @default("#E5E7EB")
+  startTime       String
+  endTime         String
+  durationHours   Float       @default(0)
+  visibleInRoster Boolean     @default(true)
+  description     String?
+  breakMinutes    Int         @default(0)
+  siteId          String?
+  siteName        String?
+  status          ShiftStatus @default(ACTIVE)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([siteId])
+  @@unique([companyId, code])
 }
 
 model UserSite {
@@ -182,10 +383,16 @@ enum SiteStatus {
 enum UserStatus {
   ACTIVE
   INACTIVE
+  SUSPENDED
 }
 
 enum AttendanceStatus {
   ON_DUTY
   COMPLETED
   ABSENT
+}
+
+enum ShiftStatus {
+  ACTIVE
+  INACTIVE
 }
