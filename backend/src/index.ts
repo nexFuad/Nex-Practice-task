@@ -17,7 +17,8 @@ import { officerAttendanceRoutes } from "./modules/attendance/officer-attendance
 
 const app = new Hono();
 
-app.use("/api/*", cors({ origin: "http://localhost:3000", credentials: true }));
+const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3000";
+app.use("/api/*", cors({ origin: frontendUrl, credentials: true }));
 app.get("/", (c) => c.json({ service: "Guardly API" }));
 app.route("/api/auth", authRoutes);
 app.route("/api/dashboard", dashboardRoutes);
