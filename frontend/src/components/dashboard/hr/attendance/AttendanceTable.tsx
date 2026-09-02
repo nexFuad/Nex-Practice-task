@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Attendance thumbnails use externally stored photo URLs. */
 import { ImageOff, MapPin, Pencil, Trash2 } from "lucide-react";
 import type { AttendanceRecord } from "./types";
 const dateText = (value: string) => new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));

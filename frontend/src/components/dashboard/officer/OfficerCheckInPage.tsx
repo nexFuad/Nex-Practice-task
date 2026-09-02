@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Live camera and Cloudinary URLs require direct image rendering. */
 
 import {
   Camera,
@@ -9,7 +10,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   activeAttendance,
   attendanceHistory,
@@ -93,7 +94,6 @@ const duration = (minutes: number) => {
 const timingLabel = (
   status: OfficerRecord["checkInTimingStatus"],
   variance: number | null,
-  action: "in" | "out",
 ) => {
   if (!status || variance === null) return "-";
   if (status === "ON_TIME") return "On time";
@@ -116,22 +116,35 @@ export function OfficerCheckInPage() {
   const [mode, setMode] = useState<"in" | "out" | null>(null);
   const [toast, setToast] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const refresh = async () => {
-    const [options, activeResult, history] = await Promise.all([
-      attendanceOptions(),
-      activeAttendance(),
-      attendanceHistory(page, query, type, date),
-    ]);
-    setSites(options.sites);
-    setShifts(options.shifts);
-    setActive(activeResult.record);
-    setTodayRecord(activeResult.todayRecord);
-    setRecords(history.records);
-    setTotal(history.total);
-  };
+  const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => {
-    void refresh().catch((error: Error) => setToast(error.message));
-  }, [page, query, type, date]);
+    let cancelled = false;
+    const loadAttendance = async () => {
+      try {
+        const [options, activeResult, history] = await Promise.all([
+          attendanceOptions(),
+          activeAttendance(),
+          attendanceHistory(page, query, type, date),
+        ]);
+        if (cancelled) return;
+        setSites(options.sites);
+        setShifts(options.shifts);
+        setActive(activeResult.record);
+        setTodayRecord(activeResult.todayRecord);
+        setRecords(history.records);
+        setTotal(history.total);
+      } catch (error) {
+        if (!cancelled)
+          setToast(
+            error instanceof Error ? error.message : "Unable to load attendance.",
+          );
+      }
+    };
+    void loadAttendance();
+    return () => {
+      cancelled = true;
+    };
+  }, [page, query, type, date, refreshKey]);
   const success = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(""), 4_000);
@@ -182,7 +195,7 @@ export function OfficerCheckInPage() {
           onSaved={async (message) => {
             setMode(null);
             success(message);
-            await refresh();
+            setRefreshKey((current) => current + 1);
           }}
         />
       )}
@@ -528,7 +541,7 @@ function Timing({
     <p
       className={`text-xs font-medium ${isRed ? "text-red-600" : "text-emerald-600"}`}
     >
-      {timingLabel(status, variance, action)}
+      {timingLabel(status, variance)}
     </p>
   );
 }

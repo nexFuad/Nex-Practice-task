@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Officer photos are loaded from stored external URLs. */
 
 import { ArrowLeft, Download, Printer, ShieldCheck } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -29,7 +30,7 @@ export function UserBioDataPage() {
   const userId = decodeURIComponent(params.employeeId ?? "");
   const [employee, setEmployee] = useState<EditableEmployee | null>(null); const [error, setError] = useState("");
   useEffect(() => {
-    if (!userId) { setError("Employee not found."); return; }
+    if (!userId) return;
     let mounted = true;
     void getUser(userId).then((data) => { if (mounted) setEmployee(data); }).catch((cause) => { if (mounted) setError(cause instanceof Error ? cause.message : "Unable to load officer particulars."); });
     return () => { mounted = false; };
@@ -42,7 +43,7 @@ export function UserBioDataPage() {
     const values = record?.certifications ?? record?.securityCourses;
     return Array.isArray(values) ? values.map((course) => typeof course === "string" ? course : display((course as { name?: string; title?: string }).name ?? (course as { title?: string }).title)).filter((course) => course !== "-") : [];
   }, [employee]);
-  if (error) return <section className="p-8"><p className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p><button type="button" onClick={() => router.push("/om/users")} className="mt-4 text-sm font-medium underline">Back to users</button></section>;
+  if (!userId || error) return <section className="p-8"><p className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error || "Employee not found."}</p><button type="button" onClick={() => router.push("/om/users")} className="mt-4 text-sm font-medium underline">Back to users</button></section>;
   if (!employee) return <p className="p-8 text-sm text-slate-500">Loading officer particulars…</p>;
 
   const company = { ...fallbackCompany, name: display(employee.company) === "-" ? fallbackCompany.name : display(employee.company) };
