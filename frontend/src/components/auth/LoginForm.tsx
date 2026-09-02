@@ -22,13 +22,9 @@ type DemoAccount = {
 };
 
 const demoAccounts: DemoAccount[] = [
-  { label: "OM Demo", employeeId: "fuad123", company: "fuad", password: "123456" },
-  {
-    label: "Officer Demo",
-    employeeId: "officer-demo",
-    company: "Guardly Security", password: "demo-password",
-  },
-  { label: "OM Admin", employeeId: "admin-demo", company: "Guardly Admin", password: "demo-password" },
+  { label: "OM", employeeId: "OmFuad", company: "fuad", password: "123fuad" },
+  { label: "Officer", employeeId: "OFuad", company: "fuad", password: "1234fuad" },
+  { label: "Admin", employeeId: "AdminFuad", company: "fuad", password: "12345fuad" },
 ];
 
 export function LoginForm() {
@@ -38,21 +34,19 @@ export function LoginForm() {
   const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [accountType, setAccountType] = useState("OM Demo");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const applyDemoAccount = (account: DemoAccount) => {
     setEmployeeId(account.employeeId);
     setCompany(account.company);
     setPassword(account.password);
-    setAccountType(account.label);
     setMessage(`${account.label} credentials are ready.`);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true); setMessage("");
-    try { const result = await login({ employeeId, company, password, accountType }); setSignedInUser(result.user); router.push(result.dashboardPath); }
+    try { const result = await login({ employeeId, company, password }); setSignedInUser(result.user); router.push(result.dashboardPath); }
     catch (cause) { setMessage(cause instanceof Error ? cause.message : "Unable to sign in."); }
     finally { setIsSubmitting(false); }
   };

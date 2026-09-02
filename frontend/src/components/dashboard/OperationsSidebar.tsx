@@ -22,6 +22,7 @@ import {
   getSignedInUser,
   type SignedInUser,
 } from "@/components/auth/auth.session";
+import { logout } from "@/components/auth/auth.api";
 
 const links = [
   ["Dashboard", "/om/dashboard", LayoutDashboard],
@@ -85,7 +86,8 @@ export function OperationsSidebar() {
   const initial = name.charAt(0).toUpperCase() || "U";
   const subtitle = user?.employeeId ?? "";
   const role = user?.role?.replace(" Demo", "") || "";
-  const logout = () => {
+  const signOut = async () => {
+    try { await logout(); } catch { /* Clear local UI session even if the server session expired. */ }
     clearSignedInUser();
     router.push("/");
   };
@@ -202,7 +204,7 @@ export function OperationsSidebar() {
                   Account Settings
                 </Link>
                 <button
-                  onClick={logout}
+                  onClick={() => void signOut()}
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
                 >
                   <LogOut className="size-4" />

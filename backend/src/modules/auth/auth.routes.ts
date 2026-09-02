@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import { Hono } from "hono";
+import { deleteCookie, setCookie } from "hono/cookie";
 import { prisma } from "../../lib/prisma.js";
+import { createSessionToken, getSession, normalizeRole, sessionCookieName } from "./auth.guard.js";
 
 const authRoutes = new Hono();
 const accountWithProfile = {
@@ -15,34 +17,51 @@ const accountWithProfile = {
   user: { select: { id: true, basic: { select: { fullName: true, email: true } } } },
 } as const;
 const normalizedId = (employeeId: string) => employeeId.trim().toLowerCase();
-const profileResponse = (account: { id: string; employeeId: string; company: string; role: string; passwordChangedAt: Date; fullName: string; email: string | null; profileImageUrl: string | null; user: { basic: { fullName: string; email: string | null } | null } }) => ({
+const profileResponse = (account: { id: string; employeeId: string; company: string; role: string; passwordChangedAt: Date; fullName: string; email: string | null; profileImageUrl: string | null; user: { id: string; basic: { fullName: string; email: string | null } | null } }) => ({
   id: account.id,
   employeeId: account.employeeId,
   fullName: account.fullName,
   company: account.company,
   email: account.email ?? account.user.basic?.email,
-  role: account.role,
+  role: normalizeRole(account.role),
   profileImageUrl: account.profileImageUrl,
   passwordChangedAt: account.passwordChangedAt,
 });
 
 authRoutes.post("/login", async (c) => {
-  const input = await c.req.json<{ employeeId?: string; company?: string; password?: string; accountType?: string }>();
+  const input = await c.req.json<{ employeeId?: string; company?: string; password?: string }>();
   if (!input.employeeId?.trim() || !input.company?.trim() || !input.password) return c.json({ message: "Employee ID, company and password are required." }, 400);
   const account = await prisma.account.findUnique({ where: { employeeId: normalizedId(input.employeeId) }, select: { ...accountWithProfile, passwordHash: true } });
   if (!account || account.company.toLowerCase() !== input.company.trim().toLowerCase() || !await bcrypt.compare(input.password, account.passwordHash)) return c.json({ message: "Invalid employee ID, company or password." }, 401);
-  const accountType = input.accountType?.toLowerCase() ?? "";
-  const dashboardPath = accountType.includes("admin") ? "/admin/dashboard" : accountType.includes("officer") ? "/officer/dashboard" : "/om/dashboard";
+  const role = normalizeRole(account.role);
+  const dashboardPath = role === "ADMIN" ? "/admin/dashboard" : role === "OFFICER" ? "/officer/dashboard" : "/om/dashboard";
+  setCookie(c, sessionCookieName, createSessionToken({ accountId: account.id, userId: account.user.id, employeeId: account.employeeId, role }), { httpOnly: true, sameSite: "Lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 8 });
   const { passwordHash: _, ...safeAccount } = account;
   return c.json({ user: profileResponse(safeAccount), dashboardPath });
 });
 
+authRoutes.get("/session", async (c) => {
+  const session = getSession(c);
+  if (!session) return c.json({ message: "No active session." }, 401);
+  const account = await prisma.account.findUnique({ where: { id: session.accountId }, select: accountWithProfile });
+  if (!account) return c.json({ message: "Session account no longer exists." }, 401);
+  return c.json({ user: profileResponse(account), dashboardPath: session.role === "ADMIN" ? "/admin/dashboard" : session.role === "OFFICER" ? "/officer/dashboard" : "/om/dashboard" });
+});
+
+authRoutes.post("/logout", (c) => { deleteCookie(c, sessionCookieName, { path: "/" }); return c.json({ message: "Logged out." }); });
+
 authRoutes.get("/profile/:employeeId", async (c) => {
+  const session = getSession(c);
+  if (!session) return c.json({ message: "Authentication required." }, 401);
+  if (session.employeeId !== normalizedId(c.req.param("employeeId")) && session.role !== "ADMIN" && session.role !== "OM") return c.json({ message: "Access denied." }, 403);
   const account = await prisma.account.findUnique({ where: { employeeId: normalizedId(c.req.param("employeeId")) }, select: accountWithProfile });
   return account ? c.json(profileResponse(account)) : c.json({ message: "Profile not found." }, 404);
 });
 
 authRoutes.patch("/profile/:employeeId", async (c) => {
+  const session = getSession(c);
+  if (!session) return c.json({ message: "Authentication required." }, 401);
+  if (session.employeeId !== normalizedId(c.req.param("employeeId")) && session.role !== "ADMIN" && session.role !== "OM") return c.json({ message: "Access denied." }, 403);
   const input = await c.req.json<{ fullName?: string; profileImageUrl?: string | null }>();
   if (!input.fullName?.trim()) return c.json({ message: "Full name is required." }, 400);
   const employeeId = normalizedId(c.req.param("employeeId"));
@@ -56,6 +75,8 @@ authRoutes.patch("/profile/:employeeId", async (c) => {
 });
 
 authRoutes.patch("/profile/:employeeId/password", async (c) => {
+  const session = getSession(c);
+  if (!session || session.employeeId !== normalizedId(c.req.param("employeeId"))) return c.json({ message: "Access denied." }, 403);
   const input = await c.req.json<{ currentPassword?: string; newPassword?: string; confirmPassword?: string }>();
   if (!input.currentPassword || !input.newPassword || !input.confirmPassword) return c.json({ message: "Complete all password fields." }, 400);
   if (input.newPassword.length < 6) return c.json({ message: "New password must have at least 6 characters." }, 400);
