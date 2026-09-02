@@ -5,6 +5,10 @@ import { type FormEvent, useState } from "react";
 import type { Shift, ShiftPayload } from "./types";
 
 const defaultValues: ShiftPayload = { companyId: "default", name: "", code: "", category: "Main", color: "#E5E7EB", startTime: "08:00", endTime: "17:00", durationHours: 9, visibleInRoster: true, description: "" };
+const safeDuration = (value: unknown, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+};
 
 function calculateDuration(start: string, end: string) {
   const [startHour, startMinute] = start.split(":").map(Number);
@@ -16,7 +20,7 @@ function calculateDuration(start: string, end: string) {
 }
 
 export function ShiftFormModal({ shift, onClose, onSave }: { shift: Shift | "new"; onClose: () => void; onSave: (payload: ShiftPayload) => Promise<void> }) {
-  const [values, setValues] = useState<ShiftPayload>(() => shift === "new" ? defaultValues : { companyId: shift.companyId ?? "default", name: shift.name, code: shift.code, category: shift.category ?? "Main", color: shift.color ?? "#E5E7EB", startTime: shift.startTime, endTime: shift.endTime, durationHours: shift.durationHours ?? calculateDuration(shift.startTime, shift.endTime), visibleInRoster: shift.visibleInRoster ?? shift.status === "ACTIVE", description: shift.description ?? "" });
+  const [values, setValues] = useState<ShiftPayload>(() => shift === "new" ? defaultValues : { companyId: shift.companyId ?? "default", name: shift.name, code: shift.code, category: shift.category ?? "Main", color: shift.color ?? "#E5E7EB", startTime: shift.startTime, endTime: shift.endTime, durationHours: safeDuration(shift.durationHours, calculateDuration(shift.startTime, shift.endTime)), visibleInRoster: shift.visibleInRoster ?? shift.status === "ACTIVE", description: shift.description ?? "" });
   const [durationEdited, setDurationEdited] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
