@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- The preview may be a local object URL before upload. */
 
 import { Camera } from "lucide-react";
 import { useRef } from "react";

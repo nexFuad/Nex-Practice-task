@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Profile URLs are user-provided and may use the configured remote image host. */
 
 import { Building2, CalendarDays, ClipboardCheck, FileText, LayoutDashboard, LogOut, Megaphone, Settings, ShieldCheck, UserRound, Users, WalletCards } from "lucide-react";
 import Link from "next/link";

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Profile URLs are user-provided and may use the configured remote image host. */
 
 import {
   CalendarDays,
