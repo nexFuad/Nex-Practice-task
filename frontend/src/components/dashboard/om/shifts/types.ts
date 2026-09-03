@@ -27,6 +27,6 @@ export type ShiftPayload = Pick<
   | "startTime"
   | "endTime"
   | "durationHours"
-  | "visibleInRoster"
+  | "status"
   | "description"
 >;

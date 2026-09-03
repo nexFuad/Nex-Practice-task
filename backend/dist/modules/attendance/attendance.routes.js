@@ -86,6 +86,21 @@ attendanceRoutes.get("/employees", async (c) => {
         fullName: employee.employeeName,
     })));
 });
+attendanceRoutes.get("/active-employees", async (c) => {
+    const employees = await prisma.user.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+            employeeId: true,
+            fullName: true,
+            basic: { select: { fullName: true } },
+        },
+        orderBy: { fullName: "asc" },
+    });
+    return c.json(employees.map((employee) => ({
+        employeeId: employee.employeeId,
+        fullName: employee.basic?.fullName ?? employee.fullName,
+    })));
+});
 attendanceRoutes.post("/", async (c) => {
     try {
         return c.json(await prisma.attendanceRecord.create({ data: await dataFor(await c.req.json()) }), 201);

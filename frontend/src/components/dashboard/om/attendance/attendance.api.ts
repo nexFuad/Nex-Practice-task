@@ -55,6 +55,8 @@ export const getAttendanceEmployees = (month: string) =>
   request<AttendanceEmployee[]>(
     `/api/attendance/employees?month=${encodeURIComponent(month)}`,
   );
+export const getAttendanceActiveEmployees = () =>
+  request<AttendanceEmployee[]>("/api/attendance/active-employees");
 export const getAttendanceSites = () =>
   request<{ items: AttendanceSite[] }>("/api/sites?page=1&pageSize=100").then(
     (result) => result.items,

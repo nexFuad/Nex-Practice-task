@@ -1,4 +1,4 @@
-import type { Shift, ShiftPayload, ShiftStatus } from "./types";
+import type { Shift, ShiftPayload } from "./types";
 const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const request = async <T>(path: string, options?: RequestInit) => {
   const response = await fetch(`${base}${path}`, {
@@ -53,11 +53,6 @@ export const updateShift = (id: string, payload: ShiftPayload) =>
   request<Shift>(`/api/shifts/${id}`, {
     method: "PUT",
     body: JSON.stringify(payload),
-  });
-export const updateShiftStatus = (id: string, status: ShiftStatus) =>
-  request<Shift>(`/api/shifts/${id}/status`, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
   });
 export const deleteShift = (id: string) =>
   request<void>(`/api/shifts/${id}`, { method: "DELETE" });

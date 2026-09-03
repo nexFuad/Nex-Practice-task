@@ -3,7 +3,6 @@
 import { FormEvent, useDeferredValue, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, Search } from "lucide-react";
-import { ManageSiteClientsModal } from "./ManageSiteClientsModal";
 import { SiteDetailsModal } from "./SiteDetailsModal";
 import { SiteFormModal } from "./SiteFormModal";
 import { SiteStats } from "./SiteStats";
@@ -34,7 +33,6 @@ export function SiteManagement() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [formSite, setFormSite] = useState<Site | "new" | null>(null);
   const [detailsSite, setDetailsSite] = useState<Site | null>(null);
-  const [clientSite, setClientSite] = useState<Site | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -44,6 +42,7 @@ export function SiteManagement() {
   const {
     data,
     isLoading,
+    isFetching,
     error: sitesError,
   } = useQuery<PaginatedSites>({
     queryKey: ["sites", { query: deferredQuery, status, page, pageSize: 10 }],
@@ -150,16 +149,6 @@ export function SiteManagement() {
     link.click();
     URL.revokeObjectURL(link.href);
   };
-  const saveClients = (_saved: Site, selectedCount: number) => {
-    void queryClient.invalidateQueries({ queryKey: ["sites"] });
-    setClientSite(null);
-    setToast(
-      selectedCount
-        ? "Site clients updated successfully"
-        : "All clients removed from site",
-    );
-  };
-
   return (
     <section
       onClick={() => setOpenMenuId(null)}
@@ -241,7 +230,7 @@ export function SiteManagement() {
                 </button>
               </div>
             </div>
-            {isLoading ? (
+            {isLoading || isFetching ? (
               <TableSkeleton columns={7} className="min-h-115" />
             ) : (
               <div className="flex flex-1 flex-col">
@@ -259,10 +248,6 @@ export function SiteManagement() {
                     }}
                     onEdit={(site) => {
                       setFormSite(site);
-                      setOpenMenuId(null);
-                    }}
-                    onManageClients={(site) => {
-                      setClientSite(site);
                       setOpenMenuId(null);
                     }}
                     onToggleStatus={toggleStatus}
@@ -290,13 +275,6 @@ export function SiteManagement() {
         <SiteDetailsModal
           site={detailsSite}
           onClose={() => setDetailsSite(null)}
-        />
-      )}
-      {clientSite && (
-        <ManageSiteClientsModal
-          site={clientSite}
-          onClose={() => setClientSite(null)}
-          onSaved={saveClients}
         />
       )}
     </section>

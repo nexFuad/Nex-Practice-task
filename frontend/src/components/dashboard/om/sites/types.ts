@@ -1,11 +1,5 @@
 export type SiteStatus = "ACTIVE" | "INACTIVE";
 
-export type Client = {
-  id: string;
-  name: string;
-  email: string;
-};
-
 export type Site = {
   id: string;
   name: string;
@@ -15,7 +9,6 @@ export type Site = {
   assignedGuards: number;
   latitude?: string;
   longitude?: string;
-  clients?: Client[];
 };
 
 export type SiteFormValues = Omit<Site, "id" | "assignedGuards">;

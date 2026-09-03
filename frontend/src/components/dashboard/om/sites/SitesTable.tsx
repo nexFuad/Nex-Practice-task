@@ -10,7 +10,6 @@ type Props = {
   onToggleMenu: (id: string) => void;
   onView: (site: Site) => void;
   onEdit: (site: Site) => void;
-  onManageClients: (site: Site) => void;
   onToggleStatus: (site: Site) => void;
   onDelete: (site: Site) => void;
   onCloseMenu: () => void;
@@ -22,7 +21,6 @@ export function SitesTable({
   onToggleMenu,
   onView,
   onEdit,
-  onManageClients,
   onToggleStatus,
   onDelete,
   onCloseMenu,
@@ -77,7 +75,6 @@ export function SitesTable({
               "Site Name",
               "Site Code",
               "Address",
-              "Client",
               "Assigned Guards",
               "Status",
               "Actions",
@@ -106,11 +103,6 @@ export function SitesTable({
               <td className="p-2 whitespace-nowrap">{site.code}</td>
               <td className="max-w-50 truncate p-2 whitespace-nowrap">
                 {site.address}
-              </td>
-              <td className="max-w-48 truncate p-2 whitespace-nowrap">
-                {site.clients?.length
-                  ? site.clients.map((client) => client.name).join(", ")
-                  : "-"}
               </td>
               <td className="p-2 whitespace-nowrap">{site.assignedGuards}</td>
               <td className="p-2 whitespace-nowrap">
@@ -148,7 +140,6 @@ export function SitesTable({
                         site={site}
                         onView={() => onView(site)}
                         onEdit={() => onEdit(site)}
-                        onManageClients={() => onManageClients(site)}
                         onToggleStatus={() => onToggleStatus(site)}
                         onDelete={() => onDelete(site)}
                         floating
