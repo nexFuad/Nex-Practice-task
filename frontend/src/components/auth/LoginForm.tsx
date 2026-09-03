@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -13,15 +20,23 @@ export function LoginForm() {
   const [employeeId, setEmployeeId] = useState("");
   const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSubmitting(true); setMessage("");
-    try { const result = await login({ employeeId, company, password }); setSignedInUser(result.user); router.push(result.dashboardPath); }
-    catch (cause) { setMessage(cause instanceof Error ? cause.message : "Unable to sign in."); }
-    finally { setIsSubmitting(false); }
+    setIsSubmitting(true);
+    setMessage("");
+    try {
+      const result = await login({ employeeId, company, password, rememberMe });
+      setSignedInUser(result.user);
+      router.push(result.dashboardPath);
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "Unable to sign in.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -105,6 +120,16 @@ export function LoginForm() {
                   )}
                 </button>
               </span>
+            </label>
+
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+                className="size-4 rounded border-slate-300 accent-blue-600"
+              />
+              <span>Remember me on this device</span>
             </label>
           </div>
 

@@ -16,6 +16,30 @@ const includeAccount = {
     },
 };
 const trim = (value) => value?.trim() || undefined;
+const primaryRoles = new Set(["OM", "OFFICER"]);
+const secondaryRoles = {
+    OM: new Set([
+        "Operations Manager",
+        "Site Operations Manager",
+        "Duty Operations Manager",
+    ]),
+    OFFICER: new Set([
+        "Security Officer",
+        "Senior Security Officer",
+        "Patrol Officer",
+    ]),
+};
+const normalizePrimaryRole = (value) => value?.trim().toUpperCase();
+const validRoleSelection = (input) => {
+    const role = normalizePrimaryRole(input.role);
+    const secondaryRole = trim(input.secondaryRole);
+    if (!role || !primaryRoles.has(role))
+        return null;
+    if (secondaryRole &&
+        !secondaryRoles[role].has(secondaryRole))
+        return null;
+    return { role, secondaryRole };
+};
 const findAccountByIdentifier = (identifier) => prisma.account.findFirst({
     where: {
         OR: [{ employeeId: identifier.toLowerCase() }, { userId: identifier }],
@@ -97,11 +121,71 @@ const editorResponse = (account) => {
     };
 };
 usersRoutes.get("/", async (c) => {
-    const accounts = await prisma.account.findMany({
-        include: includeAccount,
-        orderBy: { createdAt: "desc" },
+    const query = c.req.query("query")?.trim();
+    const role = c.req.query("role")?.toUpperCase();
+    const status = c.req.query("status")?.toUpperCase();
+    const requestedPage = Number(c.req.query("page") ?? "1");
+    const requestedPageSize = Number(c.req.query("pageSize") ?? "10");
+    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const pageSize = Number.isInteger(requestedPageSize)
+        ? Math.min(Math.max(requestedPageSize, 1), 100)
+        : 10;
+    const filters = [];
+    if (query) {
+        filters.push({
+            OR: [
+                { fullName: { contains: query, mode: "insensitive" } },
+                { employeeId: { contains: query, mode: "insensitive" } },
+                { email: { contains: query, mode: "insensitive" } },
+            ],
+        });
+    }
+    if (role === "OFFICER")
+        filters.push({ role: "OFFICER" });
+    if (role === "OM") {
+        filters.push({
+            OR: [
+                { role: "OM" },
+                { role: { contains: "MANAGER", mode: "insensitive" } },
+            ],
+        });
+    }
+    const resigned = {
+        user: { employmentRecords: { some: { status: { equals: "Resigned", mode: "insensitive" }, dateLeft: { not: null } } } },
+    };
+    if (status === "RESIGNED")
+        filters.push(resigned);
+    if (status === "ACTIVE" || status === "SUSPENDED")
+        filters.push({ status });
+    if (status === "INACTIVE")
+        filters.push({ AND: [{ status: "INACTIVE" }, { NOT: resigned }] });
+    const where = filters.length ? { AND: filters } : {};
+    const [accounts, total, activeOfficers, operationManagers] = await prisma.$transaction([
+        prisma.account.findMany({
+            where,
+            include: includeAccount,
+            orderBy: { createdAt: "desc" },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        }),
+        prisma.account.count({ where }),
+        prisma.account.count({ where: { AND: [where, { role: "OFFICER" }, { status: "ACTIVE" }] } }),
+        prisma.account.count({
+            where: {
+                AND: [
+                    where,
+                    { OR: [{ role: "OM" }, { role: { contains: "MANAGER", mode: "insensitive" } }] },
+                ],
+            },
+        }),
+    ]);
+    return c.json({
+        items: accounts.map((account) => userResponse(account)),
+        page,
+        pageSize,
+        total,
+        stats: { total, activeOfficers, operationManagers },
     });
-    return c.json(accounts.map((account) => userResponse(account)));
 });
 usersRoutes.get("/:id/schedule", async (c) => {
     const account = await findAccountByIdentifier(c.req.param("id"));
@@ -292,15 +376,39 @@ usersRoutes.put("/:id/payroll", async (c) => {
         levyType: string(profile, "levyType") || null, employeeSkillType: string(profile, "employeeSkillType") || null,
         selfHelpGroups, sdlCalculation: sdlCalculation || null, paymentMethod: string(profile, "paymentMethod") || null, paymentRemarks: string(profile, "paymentRemarks") || null,
     };
-    const nested = {
-        bankAccounts: { deleteMany: {}, create: banks.map((bank) => ({ bank: string(bank, "bank"), accountName: string(bank, "accountName"), accountNumber: string(bank, "accountNumber"), branchCode: string(bank, "branchCode"), bankCode: string(bank, "bankCode") || null, swiftCode: string(bank, "swiftCode") || null })) },
-        earnings: { deleteMany: {}, create: earnings.map((earning) => ({ name: string(earning, "name"), amount: Number(string(earning, "amount")), calculationRule: string(earning, "calculationRule") || null })) },
-        deductions: { deleteMany: {}, create: deductions.map((deduction) => ({ name: string(deduction, "name"), amount: Number(string(deduction, "amount")), accountNumber: string(deduction, "accountNumber"), deductBeforeGross: deduction.deductBeforeGross === true })) },
+    const bankAccounts = banks.map((bank) => ({
+        bank: string(bank, "bank"),
+        accountName: string(bank, "accountName"),
+        accountNumber: string(bank, "accountNumber"),
+        branchCode: string(bank, "branchCode"),
+        bankCode: string(bank, "bankCode") || null,
+        swiftCode: string(bank, "swiftCode") || null,
+    }));
+    const fixedEarnings = earnings.map((earning) => ({
+        name: string(earning, "name"),
+        amount: Number(string(earning, "amount")),
+        calculationRule: string(earning, "calculationRule") || null,
+    }));
+    const fixedDeductions = deductions.map((deduction) => ({
+        name: string(deduction, "name"),
+        amount: Number(string(deduction, "amount")),
+        accountNumber: string(deduction, "accountNumber"),
+        deductBeforeGross: deduction.deductBeforeGross === true,
+    }));
+    const createNested = {
+        bankAccounts: { create: bankAccounts },
+        earnings: { create: fixedEarnings },
+        deductions: { create: fixedDeductions },
+    };
+    const updateNested = {
+        bankAccounts: { deleteMany: {}, create: bankAccounts },
+        earnings: { deleteMany: {}, create: fixedEarnings },
+        deductions: { deleteMany: {}, create: fixedDeductions },
     };
     const saved = await prisma.employeePayrollProfile.upsert({
         where: { userId: account.userId },
-        create: { userId: account.userId, ...data, ...nested },
-        update: { ...data, ...nested },
+        create: { userId: account.userId, ...data, ...createNested },
+        update: { ...data, ...updateNested },
         include: { bankAccounts: true, earnings: true, deductions: true },
     });
     return c.json({ profile: { ...saved, bankAccounts: undefined, earnings: undefined, deductions: undefined }, bankAccounts: saved.bankAccounts, earnings: saved.earnings, deductions: saved.deductions });
@@ -320,6 +428,9 @@ usersRoutes.post("/", async (c) => {
         !input.phone?.trim() ||
         !input.role?.trim())
         return c.json({ message: "Please complete all required fields." }, 400);
+    const roleSelection = validRoleSelection(input);
+    if (!roleSelection)
+        return c.json({ message: "Select a valid OM or OFFICER role and secondary role." }, 400);
     const siteIds = [...new Set(input.siteIds ?? [])];
     const vaccinated = input.vaccinated === "Yes" || input.vaccinated === true
         ? true
@@ -357,8 +468,8 @@ usersRoutes.post("/", async (c) => {
                 email: trim(input.email),
                 nfcCode: trim(input.nfcCode),
                 address: trim(input.address),
-                role: input.role.trim(),
-                secondaryRole: trim(input.secondaryRole),
+                role: roleSelection.role,
+                secondaryRole: roleSelection.secondaryRole,
                 insurancePlan: trim(input.insurancePlan),
                 primaryNokName: trim(input.primaryNokName),
                 primaryNokRelationship: trim(input.primaryNokRelationship),
@@ -389,7 +500,7 @@ usersRoutes.post("/", async (c) => {
                         nfcCode: trim(input.nfcCode),
                         maritalStatus: trim(input.maritalStatus),
                         address: trim(input.address),
-                        secondaryRole: trim(input.secondaryRole),
+                        secondaryRole: roleSelection.secondaryRole,
                         insurancePlan: trim(input.insurancePlan),
                         vaccinated,
                         bypassGpsGeofence,
@@ -405,7 +516,7 @@ usersRoutes.post("/", async (c) => {
                         email: trim(input.email),
                         profileImageUrl: trim(input.profileImageUrl),
                         passwordHash: await bcrypt.hash(input.password, 10),
-                        role: input.role.trim(),
+                        role: roleSelection.role,
                     },
                 },
                 nextOfKin: {
@@ -452,6 +563,9 @@ usersRoutes.put("/:id", async (c) => {
         !input.phone?.trim() ||
         !input.role?.trim())
         return c.json({ message: "Please complete all required fields." }, 400);
+    const roleSelection = validRoleSelection(input);
+    if (!roleSelection)
+        return c.json({ message: "Select a valid OM or OFFICER role and secondary role." }, 400);
     const account = await findAccountByIdentifier(originalEmployeeId);
     if (!account)
         return c.json({ message: "Employee not found." }, 404);
@@ -479,8 +593,8 @@ usersRoutes.put("/:id", async (c) => {
         email: trim(input.email),
         nfcCode: trim(input.nfcCode),
         address: trim(input.address),
-        role: input.role.trim(),
-        secondaryRole: trim(input.secondaryRole),
+        role: roleSelection.role,
+        secondaryRole: roleSelection.secondaryRole,
         insurancePlan: trim(input.insurancePlan),
         primaryNokName: trim(input.primaryNokName),
         primaryNokRelationship: trim(input.primaryNokRelationship),

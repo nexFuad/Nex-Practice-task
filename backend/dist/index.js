@@ -24,9 +24,6 @@ const allowedFrontendOrigins = new Set(production
     ? [configuredFrontendUrl]
     : [configuredFrontendUrl, "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]);
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-const loginAttempts = new Map();
-const loginLimit = 10;
-const loginWindowMs = 15 * 60 * 1000;
 app.use("*", async (c, next) => {
     c.header("X-Content-Type-Options", "nosniff");
     c.header("X-Frame-Options", "DENY");
@@ -49,23 +46,6 @@ app.use("/api/*", async (c, next) => {
     const origin = c.req.header("origin");
     if (!origin || !allowedFrontendOrigins.has(origin)) {
         return c.json({ message: "Request origin is not allowed." }, 403);
-    }
-    await next();
-});
-app.use("/api/auth/login", async (c, next) => {
-    const forwardedFor = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
-    const clientId = forwardedFor || c.req.header("x-real-ip") || "unknown";
-    const now = Date.now();
-    const current = loginAttempts.get(clientId);
-    if (!current || current.resetAt <= now) {
-        loginAttempts.set(clientId, { count: 1, resetAt: now + loginWindowMs });
-    }
-    else {
-        current.count += 1;
-        if (current.count > loginLimit) {
-            c.header("Retry-After", String(Math.ceil((current.resetAt - now) / 1000)));
-            return c.json({ message: "Too many login attempts. Please try again later." }, 429);
-        }
     }
     await next();
 });

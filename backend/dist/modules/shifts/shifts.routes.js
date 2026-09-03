@@ -18,7 +18,19 @@ shiftsRoutes.get("/", async (c) => {
     const query = clean(c.req.query("query"));
     const status = c.req.query("status");
     const companyId = clean(c.req.query("companyId")) ?? "default";
-    return c.json(await prisma.shift.findMany({ where: { companyId, status: status === "ACTIVE" || status === "INACTIVE" ? status : undefined, OR: query ? [{ name: { contains: query, mode: "insensitive" } }, { code: { contains: query, mode: "insensitive" } }] : undefined }, orderBy: { createdAt: "desc" } }));
+    const requestedPage = Number(c.req.query("page") ?? "1");
+    const requestedPageSize = Number(c.req.query("pageSize") ?? "10");
+    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const pageSize = Number.isInteger(requestedPageSize) ? Math.min(Math.max(requestedPageSize, 1), 100) : 10;
+    const where = { companyId, status: status === "ACTIVE" || status === "INACTIVE" ? status : undefined, OR: query ? [{ name: { contains: query, mode: "insensitive" } }, { code: { contains: query, mode: "insensitive" } }] : undefined };
+    const [items, total, active, inactive, assignedSites] = await prisma.$transaction([
+        prisma.shift.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize }),
+        prisma.shift.count({ where }),
+        prisma.shift.count({ where: { ...where, status: "ACTIVE" } }),
+        prisma.shift.count({ where: { ...where, status: "INACTIVE" } }),
+        prisma.shift.count({ where: { ...where, siteId: { not: null } } }),
+    ]);
+    return c.json({ items, page, pageSize, total, stats: { total, active, inactive, assignedSites } });
 });
 shiftsRoutes.post("/", async (c) => { try {
     return c.json(await prisma.shift.create({ data: await shiftData(await c.req.json()) }), 201);

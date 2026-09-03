@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { TableSkeleton } from "../om/TableSkeleton";
 import {
   activeAttendance,
   attendanceHistory,
@@ -112,9 +113,18 @@ export function OfficerCheckInPage() {
   const [toast, setToast] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const optionsQuery = useQuery({ queryKey: ["officer", "attendance", "options"], queryFn: attendanceOptions });
-  const activeQuery = useQuery({ queryKey: ["officer", "attendance", "active"], queryFn: activeAttendance });
-  const historyQuery = useQuery({ queryKey: ["officer", "attendance", "history", page, query, type, date], queryFn: () => attendanceHistory(page, query, type, date) });
+  const optionsQuery = useQuery({
+    queryKey: ["officer", "attendance", "options"],
+    queryFn: attendanceOptions,
+  });
+  const activeQuery = useQuery({
+    queryKey: ["officer", "attendance", "active"],
+    queryFn: activeAttendance,
+  });
+  const historyQuery = useQuery({
+    queryKey: ["officer", "attendance", "history", page, query, type, date],
+    queryFn: () => attendanceHistory(page, query, type, date),
+  });
   const sites = optionsQuery.data?.sites ?? [];
   const shifts = optionsQuery.data?.shifts ?? [];
   const active = activeQuery.data?.record ?? null;
@@ -146,6 +156,7 @@ export function OfficerCheckInPage() {
       <DailyDutyCard
         record={todayRecord}
         active={active}
+        loading={activeQuery.isLoading}
         onAction={() => setMode(active ? "out" : "in")}
       />
       <History
@@ -160,6 +171,7 @@ export function OfficerCheckInPage() {
         setType={setType}
         setDate={setDate}
         onPreview={setPhotoPreview}
+        loading={historyQuery.isLoading}
       />
       {mode && (
         <AttendanceModal
@@ -171,13 +183,20 @@ export function OfficerCheckInPage() {
           onSaved={async (message) => {
             setMode(null);
             success(message);
-            await Promise.all([queryClient.invalidateQueries({ queryKey: ["officer", "attendance", "active"] }), queryClient.invalidateQueries({ queryKey: ["officer", "attendance", "history"] })]);
+            await Promise.all([
+              queryClient.invalidateQueries({
+                queryKey: ["officer", "attendance", "active"],
+              }),
+              queryClient.invalidateQueries({
+                queryKey: ["officer", "attendance", "history"],
+              }),
+            ]);
           }}
         />
       )}
       {photoPreview && (
         <div
-          className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/60 p-4"
+          className="fixed inset-0 z-70 grid place-items-center bg-slate-950/60 p-4"
           onClick={() => setPhotoPreview(null)}
         >
           <img
@@ -193,13 +212,34 @@ export function OfficerCheckInPage() {
 function DailyDutyCard({
   record,
   active,
+  loading,
   onAction,
 }: {
   record: OfficerRecord | null;
   active: OfficerRecord | null;
+  loading: boolean;
   onAction: () => void;
 }) {
   const checkingOut = Boolean(active);
+  if (loading) {
+    return (
+      <article
+        aria-busy="true"
+        aria-label="Loading today's duty"
+        className="mt-6 max-w-xl animate-pulse rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex items-start justify-between">
+          <div className="space-y-3">
+            <div className="h-4 w-24 rounded bg-slate-200" />
+            <div className="h-6 w-52 rounded bg-slate-200" />
+            <div className="h-4 w-64 rounded bg-slate-100" />
+          </div>
+          <div className="size-10 rounded-lg bg-slate-100" />
+        </div>
+        <div className="mt-5 h-10 w-28 rounded-md bg-slate-200" />
+      </article>
+    );
+  }
   return (
     <article className="mt-6 max-w-xl rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -346,7 +386,7 @@ function AttendanceModal({
   };
   return (
     <div
-      className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/45 p-4"
+      className="fixed inset-0 z-60 grid place-items-center bg-slate-950/45 p-4"
       role="dialog"
       aria-modal="true"
     >
@@ -700,6 +740,7 @@ function History({
   setType,
   setDate,
   onPreview,
+  loading,
 }: {
   records: OfficerRecord[];
   total: number;
@@ -712,12 +753,13 @@ function History({
   setType: (v: string) => void;
   setDate: (v: string) => void;
   onPreview: (url: string) => void;
+  loading: boolean;
 }) {
   const pages = Math.max(1, Math.ceil(total / 10));
   return (
-    <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="mt-7 flex min-h-185 flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <label className="relative min-w-0 flex-1 sm:min-w-[220px]">
+        <label className="relative min-w-0 flex-1 sm:min-w-55">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <input
             value={query}
@@ -751,96 +793,100 @@ function History({
           className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm sm:w-auto"
         />
       </div>
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[900px] text-left text-sm">
-          <thead className="border-y border-slate-200 bg-slate-50 text-slate-600">
-            <tr>
-              {[
-                "Date",
-                "Site / Post",
-                "Shift",
-                "Check-In",
-                "Check-Out",
-                "Check-In Photo",
-                "Check-Out Photo",
-                "Status",
-                "Location Validation",
-              ].map((column) => (
-                <th key={column} className="px-3 py-3 font-medium">
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {records.length ? (
-              records.map((record) => (
-                <tr key={record.id} className="border-b border-slate-100">
-                  <td className="px-3 py-3">
-                    {new Date(record.shiftDate).toLocaleDateString("en-GB")}
-                  </td>
-                  <td className="px-3 py-3">{record.siteName ?? "-"}</td>
-                  <td className="px-3 py-3">
-                    {record.shiftType ?? "-"}
-                    <br />
-                    <span className="text-xs text-slate-500">
-                      {record.shiftStart} – {record.shiftEnd}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <p>{time(record.checkInAt)}</p>
-                    <Timing
-                      status={record.checkInTimingStatus}
-                      variance={record.checkInVarianceMinutes}
-                      action="in"
-                    />
-                  </td>
-                  <td className="px-3 py-3">
-                    <p>{time(record.checkOutAt)}</p>
-                    <Timing
-                      status={record.checkOutTimingStatus}
-                      variance={record.checkOutVarianceMinutes}
-                      action="out"
-                    />
-                  </td>
-                  <td className="px-3 py-3">
-                    <PhotoButton
-                      url={record.checkInImageUrl}
-                      onPreview={onPreview}
-                    />
-                  </td>
-                  <td className="px-3 py-3">
-                    <PhotoButton
-                      url={record.checkOutImageUrl}
-                      onPreview={onPreview}
-                    />
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
-                      {record.status.replaceAll("_", " ")}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 text-xs text-emerald-700">
-                    {record.checkOutValidationStatus ??
-                      record.checkInValidationStatus ??
-                      "-"}
+      {loading ? (
+        <TableSkeleton columns={9} className="mt-4 min-h-160" />
+      ) : (
+        <div className="mt-4 min-h-160 flex-1 overflow-x-auto">
+          <table className="w-full min-w-225 text-left text-sm">
+            <thead className="border-y border-slate-200 bg-slate-50 text-slate-600">
+              <tr>
+                {[
+                  "Date",
+                  "Site / Post",
+                  "Shift",
+                  "Check-In",
+                  "Check-Out",
+                  "Check-In Photo",
+                  "Check-Out Photo",
+                  "Status",
+                  "Location Validation",
+                ].map((column) => (
+                  <th key={column} className="px-3 py-3 font-medium">
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {records.length ? (
+                records.map((record) => (
+                  <tr key={record.id} className="border-b border-slate-100">
+                    <td className="px-3 py-3">
+                      {new Date(record.shiftDate).toLocaleDateString("en-GB")}
+                    </td>
+                    <td className="px-3 py-3">{record.siteName ?? "-"}</td>
+                    <td className="px-3 py-3">
+                      {record.shiftType ?? "-"}
+                      <br />
+                      <span className="text-xs text-slate-500">
+                        {record.shiftStart} – {record.shiftEnd}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <p>{time(record.checkInAt)}</p>
+                      <Timing
+                        status={record.checkInTimingStatus}
+                        variance={record.checkInVarianceMinutes}
+                        action="in"
+                      />
+                    </td>
+                    <td className="px-3 py-3">
+                      <p>{time(record.checkOutAt)}</p>
+                      <Timing
+                        status={record.checkOutTimingStatus}
+                        variance={record.checkOutVarianceMinutes}
+                        action="out"
+                      />
+                    </td>
+                    <td className="px-3 py-3">
+                      <PhotoButton
+                        url={record.checkInImageUrl}
+                        onPreview={onPreview}
+                      />
+                    </td>
+                    <td className="px-3 py-3">
+                      <PhotoButton
+                        url={record.checkOutImageUrl}
+                        onPreview={onPreview}
+                      />
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
+                        {record.status.replaceAll("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-emerald-700">
+                      {record.checkOutValidationStatus ??
+                        record.checkInValidationStatus ??
+                        "-"}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-3 py-10 text-center text-slate-500"
+                  >
+                    No attendance records found.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="px-3 py-10 text-center text-slate-500"
-                >
-                  No attendance records found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-4 flex items-center justify-between text-sm">
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="mt-auto flex items-center justify-between pt-4 text-sm">
         <span className="text-slate-500">
           {total} record{total === 1 ? "" : "s"}
         </span>

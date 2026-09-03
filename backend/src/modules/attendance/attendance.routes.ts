@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { prisma } from "../../lib/prisma.js";
+import type { Prisma } from "../../generated/prisma/client.js";
 
 const attendanceRoutes = new Hono();
 
@@ -28,6 +29,15 @@ type AttendanceInput = {
 const clean = (value?: string) => value?.trim() || undefined;
 const asDate = (value?: string) => value ? new Date(value) : undefined;
 const validDate = (value?: string) => Boolean(value && !Number.isNaN(new Date(value).getTime()));
+
+const monthRange = (month?: string) => {
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) return null;
+  const start = new Date(`${month}-01T00:00:00.000Z`);
+  return {
+    start,
+    end: new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1)),
+  };
+};
 
 async function dataFor(input: AttendanceInput) {
   if (!clean(input.employeeId) || !validDate(input.shiftDate) || !clean(input.shiftStart) || !clean(input.shiftEnd)) {
@@ -68,18 +78,42 @@ attendanceRoutes.get("/", async (c) => {
   const month = c.req.query("month");
   const employeeId = clean(c.req.query("employeeId"));
   const query = clean(c.req.query("query"));
-  const start = month && /^\d{4}-\d{2}$/.test(month) ? new Date(`${month}-01T00:00:00.000Z`) : undefined;
-  const end = start ? new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1)) : undefined;
-  const records = await prisma.attendanceRecord.findMany({
-    where: {
+  const requestedPage = Number(c.req.query("page") ?? "1");
+  const requestedPageSize = Number(c.req.query("pageSize") ?? "10");
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const pageSize = Number.isInteger(requestedPageSize) ? Math.min(Math.max(requestedPageSize, 1), 100) : 10;
+  const range = monthRange(month);
+  const where: Prisma.AttendanceRecordWhereInput = {
       employeeId: employeeId || undefined,
-      shiftDate: start && end ? { gte: start, lt: end } : undefined,
+      shiftDate: range ? { gte: range.start, lt: range.end } : undefined,
       OR: query ? [{ employeeName: { contains: query, mode: "insensitive" } }, { employeeId: { contains: query, mode: "insensitive" } }, { siteName: { contains: query, mode: "insensitive" } }] : undefined,
+  };
+  const [records, total, onDuty, completed] = await prisma.$transaction([
+    prisma.attendanceRecord.findMany({ where, orderBy: [{ shiftDate: "desc" }, { createdAt: "desc" }], skip: (page - 1) * pageSize, take: pageSize }),
+    prisma.attendanceRecord.count({ where }),
+    prisma.attendanceRecord.count({ where: { AND: [where, { status: "ON_DUTY" }] } }),
+    prisma.attendanceRecord.count({ where: { AND: [where, { status: "COMPLETED" }] } }),
+  ]);
+  return c.json({ records, page, pageSize, total, stats: { total, onDuty, completed } });
+});
+
+attendanceRoutes.get("/employees", async (c) => {
+  const range = monthRange(c.req.query("month"));
+  const employees = await prisma.attendanceRecord.findMany({
+    where: {
+      shiftDate: range ? { gte: range.start, lt: range.end } : undefined,
     },
-    orderBy: [{ shiftDate: "desc" }, { createdAt: "desc" }],
+    select: { employeeId: true, employeeName: true },
+    distinct: ["employeeId"],
+    orderBy: { employeeName: "asc" },
   });
-  const stats = { total: records.length, onDuty: records.filter((record) => record.status === "ON_DUTY").length, completed: records.filter((record) => record.status === "COMPLETED").length };
-  return c.json({ records, stats });
+
+  return c.json(
+    employees.map((employee) => ({
+      employeeId: employee.employeeId,
+      fullName: employee.employeeName,
+    })),
+  );
 });
 
 attendanceRoutes.post("/", async (c) => {

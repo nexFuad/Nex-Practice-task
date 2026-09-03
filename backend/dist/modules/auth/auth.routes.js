@@ -2,13 +2,14 @@ import bcrypt from "bcryptjs";
 import { Hono } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import { prisma } from "../../lib/prisma.js";
-import { createSessionToken, getSession, normalizeRole, sessionCookieName } from "./auth.guard.js";
+import { createRefreshToken, createSessionToken, getRefreshSession, getSession, normalizeRole, refreshCookieName, sessionCookieName } from "./auth.guard.js";
 const authRoutes = new Hono();
 const accountWithProfile = {
     id: true,
     employeeId: true,
     company: true,
     role: true,
+    status: true,
     passwordChangedAt: true,
     fullName: true,
     email: true,
@@ -16,6 +17,23 @@ const accountWithProfile = {
     user: { select: { id: true, basic: { select: { fullName: true, email: true } } } },
 };
 const normalizedId = (employeeId) => employeeId.trim().toLowerCase();
+const isSupportedAccountRole = (role) => ["ADMIN", "OM", "OFFICER"].includes(role.trim().toUpperCase());
+const dashboardFor = (role) => role === "OFFICER" ? "/officer/dashboard" : "/om/sites";
+const setAuthCookies = (c, session, rememberMe) => {
+    const production = process.env.NODE_ENV === "production";
+    const shared = { httpOnly: true, sameSite: production ? "None" : "Lax", secure: production };
+    setCookie(c, sessionCookieName, createSessionToken(session), { ...shared, path: "/", maxAge: 15 * 60 });
+    if (rememberMe) {
+        setCookie(c, refreshCookieName, createRefreshToken(session), {
+            ...shared,
+            path: "/api/auth/refresh",
+            maxAge: 30 * 24 * 60 * 60,
+        });
+    }
+    else {
+        deleteCookie(c, refreshCookieName, { path: "/api/auth/refresh" });
+    }
+};
 const profileResponse = (account) => ({
     id: account.id,
     employeeId: account.employeeId,
@@ -33,12 +51,36 @@ authRoutes.post("/login", async (c) => {
     const account = await prisma.account.findUnique({ where: { employeeId: normalizedId(input.employeeId) }, select: { ...accountWithProfile, passwordHash: true } });
     if (!account || account.company.toLowerCase() !== input.company.trim().toLowerCase() || !await bcrypt.compare(input.password, account.passwordHash))
         return c.json({ message: "Invalid employee ID, company or password." }, 401);
+    if (account.status !== "ACTIVE")
+        return c.json({ message: "Your account is not active. Contact an operations manager." }, 403);
+    if (!isSupportedAccountRole(account.role))
+        return c.json({ message: "This account does not have a supported application role." }, 403);
     const role = normalizeRole(account.role);
-    const dashboardPath = role === "ADMIN" ? "/admin/dashboard" : role === "OFFICER" ? "/officer/dashboard" : "/om/dashboard";
-    const production = process.env.NODE_ENV === "production";
-    setCookie(c, sessionCookieName, createSessionToken({ accountId: account.id, userId: account.user.id, employeeId: account.employeeId, role }), { httpOnly: true, sameSite: production ? "None" : "Lax", secure: production, path: "/", maxAge: 60 * 60 * 8 });
+    const dashboardPath = dashboardFor(role);
+    setAuthCookies(c, {
+        accountId: account.id,
+        userId: account.user.id,
+        employeeId: account.employeeId,
+        role,
+    }, input.rememberMe === true);
     const { passwordHash: _, ...safeAccount } = account;
     return c.json({ user: profileResponse(safeAccount), dashboardPath });
+});
+authRoutes.post("/refresh", async (c) => {
+    const refreshSession = getRefreshSession(c);
+    if (!refreshSession)
+        return c.json({ message: "Your session has expired. Please sign in again." }, 401);
+    const account = await prisma.account.findUnique({ where: { id: refreshSession.accountId }, select: accountWithProfile });
+    if (!account || account.status !== "ACTIVE")
+        return c.json({ message: "Your account is unavailable. Please sign in again." }, 401);
+    const role = normalizeRole(account.role);
+    setAuthCookies(c, {
+        accountId: account.id,
+        userId: account.user.id,
+        employeeId: account.employeeId,
+        role,
+    }, true);
+    return c.json({ user: profileResponse(account), dashboardPath: dashboardFor(role) });
 });
 authRoutes.get("/session", async (c) => {
     const session = getSession(c);
@@ -47,9 +89,9 @@ authRoutes.get("/session", async (c) => {
     const account = await prisma.account.findUnique({ where: { id: session.accountId }, select: accountWithProfile });
     if (!account)
         return c.json({ message: "Session account no longer exists." }, 401);
-    return c.json({ user: profileResponse(account), dashboardPath: session.role === "ADMIN" ? "/admin/dashboard" : session.role === "OFFICER" ? "/officer/dashboard" : "/om/dashboard" });
+    return c.json({ user: profileResponse(account), dashboardPath: dashboardFor(session.role) });
 });
-authRoutes.post("/logout", (c) => { deleteCookie(c, sessionCookieName, { path: "/" }); return c.json({ message: "Logged out." }); });
+authRoutes.post("/logout", (c) => { deleteCookie(c, sessionCookieName, { path: "/" }); deleteCookie(c, refreshCookieName, { path: "/api/auth/refresh" }); deleteCookie(c, "guardly_session", { path: "/" }); return c.json({ message: "Logged out." }); });
 authRoutes.get("/profile/:employeeId", async (c) => {
     const session = getSession(c);
     if (!session)

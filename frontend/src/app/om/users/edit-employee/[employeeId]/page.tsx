@@ -1,4 +1,4 @@
-import { EditEmployeePage } from "@/components/dashboard/users/employee/EditEmployeePage";
+import { EditEmployeePage } from "@/components/dashboard/om/users/employee/EditEmployeePage";
 
 export default function EditEmployeeRoute() {
   return <EditEmployeePage />;

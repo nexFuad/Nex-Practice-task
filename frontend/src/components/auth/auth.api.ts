@@ -2,10 +2,19 @@ import type { SignedInUser } from "./auth.session";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 async function request<T>(path: string, init?: RequestInit) {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  let response = await fetch(`${apiBaseUrl}${path}`, {
     ...init,
     credentials: "include",
   });
+  if (response.status === 401 && path !== "/api/auth/login" && path !== "/api/auth/refresh") {
+    const refreshResponse = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (refreshResponse.ok) {
+      response = await fetch(`${apiBaseUrl}${path}`, { ...init, credentials: "include" });
+    }
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new Error(body?.message ?? "Unable to complete the request.");
@@ -13,10 +22,15 @@ async function request<T>(path: string, init?: RequestInit) {
   return response.json() as Promise<T>;
 }
 
+export function refreshSession() {
+  return request<{ user: SignedInUser; dashboardPath: string }>("/api/auth/refresh", { method: "POST" });
+}
+
 export function login(payload: {
   employeeId: string;
   company: string;
   password: string;
+  rememberMe: boolean;
 }) {
   return request<{ user: SignedInUser; dashboardPath: string }>(
     "/api/auth/login",
