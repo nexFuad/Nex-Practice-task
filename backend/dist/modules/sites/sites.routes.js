@@ -11,14 +11,22 @@ const normalizeSite = (input) => ({
 sitesRoutes.get("/", async (c) => {
     const query = c.req.query("query")?.trim();
     const status = c.req.query("status");
-    return c.json(await prisma.site.findMany({
-        include: includeClients,
-        where: {
-            ...(status === "ACTIVE" || status === "INACTIVE" ? { status } : {}),
-            ...(query ? { OR: [{ name: { contains: query, mode: "insensitive" } }, { code: { contains: query, mode: "insensitive" } }, { address: { contains: query, mode: "insensitive" } }] } : {}),
-        },
-        orderBy: { createdAt: "asc" },
-    }));
+    const requestedPage = Number(c.req.query("page") ?? "1");
+    const requestedPageSize = Number(c.req.query("pageSize") ?? "10");
+    const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const pageSize = Number.isInteger(requestedPageSize) ? Math.min(Math.max(requestedPageSize, 1), 100) : 10;
+    const where = {
+        ...(status === "ACTIVE" || status === "INACTIVE" ? { status } : {}),
+        ...(query ? { OR: [{ name: { contains: query, mode: "insensitive" } }, { code: { contains: query, mode: "insensitive" } }, { address: { contains: query, mode: "insensitive" } }] } : {}),
+    };
+    const [items, total, active, inactive, withGuards] = await prisma.$transaction([
+        prisma.site.findMany({ include: includeClients, where, orderBy: { createdAt: "asc" }, skip: (page - 1) * pageSize, take: pageSize }),
+        prisma.site.count({ where }),
+        prisma.site.count({ where: { AND: [where, { status: "ACTIVE" }] } }),
+        prisma.site.count({ where: { AND: [where, { status: "INACTIVE" }] } }),
+        prisma.site.count({ where: { AND: [where, { assignedGuards: { gt: 0 } }] } }),
+    ]);
+    return c.json({ items, page, pageSize, total, stats: { total, active, inactive, withGuards } });
 });
 sitesRoutes.post("/", async (c) => {
     const input = await c.req.json();

@@ -1,0 +1,227 @@
+/* eslint-disable @next/next/no-img-element -- Attendance thumbnails use externally stored photo URLs. */
+import { ImageOff, MapPin, Pencil, Trash2 } from "lucide-react";
+import type { AttendanceRecord } from "./types";
+const dateText = (value: string) =>
+  new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value));
+const timeText = (value: string | null) =>
+  value
+    ? new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(value))
+    : "—";
+const mapUrl = (lat: number | null, lng: number | null) =>
+  lat !== null && lng !== null
+    ? `https://www.google.com/maps?q=${lat},${lng}`
+    : undefined;
+function Photo({ url, label }: { url: string | null; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      {url ? (
+        <img
+          src={url}
+          alt={`${label} attendance`}
+          className="size-12 rounded-md border border-slate-200 object-cover"
+        />
+      ) : (
+        <span className="grid size-12 place-items-center rounded-md border border-dashed border-slate-200 text-slate-400">
+          <ImageOff className="size-4" />
+        </span>
+      )}
+      <span className="text-[10px] font-medium text-slate-500">{label}</span>
+    </div>
+  );
+}
+export function AttendanceTable({
+  records,
+  onEdit,
+  onDelete,
+}: {
+  records: AttendanceRecord[];
+  onEdit: (record: AttendanceRecord) => void;
+  onDelete: (record: AttendanceRecord) => void;
+}) {
+  const columns = [
+    ["OM/Officer", "w-[220px]"],
+    ["Site / Post", "w-[200px]"],
+    ["Shift", "w-[180px]"],
+    ["Shift Type", "w-[150px]"],
+    ["Photos", "w-[220px]"],
+    ["Check-in", "w-[200px]"],
+    ["Check-out", "w-[180px]"],
+    ["GPS Location", "w-[180px]"],
+    ["Status", "w-[200px]"],
+    ["Actions", "w-[72px]"],
+  ] as const;
+  return (
+    <div className="min-h-160 w-full flex-1 overflow-x-scroll overflow-y-visible scrollbar-gutter-stable">
+      <table className="h-full min-w-[1780px] w-full caption-bottom text-sm">
+        <thead className="border-b border-slate-200">
+          <tr>
+            {columns.map(([heading, width]) => (
+              <th
+                key={heading}
+                className={`h-10 ${width} whitespace-nowrap px-2 text-left align-middle font-medium text-slate-900`}
+              >
+                {heading}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {records.length === 0 ? (
+            <tr>
+              <td
+                colSpan={10}
+                className="h-96 text-center text-sm text-slate-500"
+              >
+                No attendance records found for this month.
+              </td>
+            </tr>
+          ) : (
+            records.map((record) => (
+              <tr
+                key={record.id}
+                className="cursor-pointer border-b border-slate-200 align-middle transition-colors hover:bg-slate-50"
+              >
+                <td className="p-2">
+                  <div className="space-y-1">
+                    <p className="font-medium leading-tight">
+                      {record.employeeName}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      ID: {record.employeeId}
+                    </p>
+                  </div>
+                </td>
+                <td className="p-2">
+                  <div className="space-y-1">
+                    <p className="font-medium leading-tight">
+                      {record.siteName ?? "Unassigned"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Code: {record.siteCode ?? "—"}
+                    </p>
+                  </div>
+                </td>
+                <td className="p-2">
+                  <div className="space-y-1">
+                    <p className="font-medium leading-tight">
+                      {record.shiftStart} – {record.shiftEnd}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {new Intl.DateTimeFormat("en-US", {
+                        weekday: "long",
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }).format(new Date(record.shiftDate))}
+                    </p>
+                  </div>
+                </td>
+                <td className="p-2 font-medium">{record.shiftType ?? "—"}</td>
+                <td className="p-2">
+                  <div className="flex gap-4">
+                    <Photo url={record.checkInImageUrl} label="Check-in" />
+                    <Photo url={record.checkOutImageUrl} label="Check-out" />
+                  </div>
+                </td>
+                <td className="p-2">
+                  <div className="space-y-1">
+                    <p className="font-medium">{timeText(record.checkInAt)}</p>
+                    <p className="text-xs text-slate-500">
+                      {record.checkInAt ? dateText(record.checkInAt) : "—"}
+                    </p>
+                  </div>
+                </td>
+                <td className="p-2">
+                  <div className="space-y-1">
+                    <p className="font-medium">{timeText(record.checkOutAt)}</p>
+                    <p className="text-xs text-slate-500">
+                      {record.checkOutAt ? dateText(record.checkOutAt) : "—"}
+                    </p>
+                  </div>
+                </td>
+                <td className="p-2">
+                  <div className="flex flex-col gap-3 py-1">
+                    {[
+                      [
+                        "Check-in",
+                        mapUrl(record.checkInLatitude, record.checkInLongitude),
+                      ],
+                      [
+                        "Check-out",
+                        mapUrl(
+                          record.checkOutLatitude,
+                          record.checkOutLongitude,
+                        ),
+                      ],
+                    ].map(([label, url]) => (
+                      <div
+                        key={String(label)}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                          <MapPin className="size-3.5" />
+                        </span>
+                        {url ? (
+                          <a
+                            href={String(url)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-semibold hover:text-blue-600"
+                          >
+                            {label}: View on Maps
+                          </a>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">
+                            {label}: —
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </td>
+                <td className="p-2">
+                  <span
+                    className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${record.status === "COMPLETED" ? "bg-blue-600 text-white" : record.status === "ON_DUTY" ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-700"}`}
+                  >
+                    {record.status === "COMPLETED"
+                      ? "Completed Shift"
+                      : record.status === "ON_DUTY"
+                        ? "On Duty"
+                        : "Absent"}
+                  </span>
+                </td>
+                <td className="p-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="Edit attendance record"
+                      onClick={() => onEdit(record)}
+                      className="grid size-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-blue-600"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Delete attendance record"
+                      onClick={() => onDelete(record)}
+                      className="grid size-8 place-items-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}

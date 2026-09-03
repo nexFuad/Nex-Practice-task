@@ -1,0 +1,25 @@
+import { Clock3, Power, PowerOff, Building2 } from "lucide-react";
+export function ShiftStats({ values }: { values: number[] }) {
+  const rows = [
+    ["Total Shifts", values[0], Clock3, "text-slate-500"],
+    ["Active Shifts", values[1], Power, "text-emerald-600"],
+    ["Inactive Shifts", values[2], PowerOff, "text-red-600"],
+    ["Assigned Sites", values[3], Building2, "text-blue-600"],
+  ] as const;
+  return (
+    <div className="grid gap-4 md:grid-cols-4">
+      {rows.map(([label, value, Icon, color]) => (
+        <section
+          key={label}
+          className="rounded-xl border border-slate-200 bg-white py-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between px-6 pb-2">
+            <p className="text-sm font-medium">{label}</p>
+            <Icon className={`size-4 ${color}`} />
+          </div>
+          <p className="px-6 text-2xl font-bold">{value}</p>
+        </section>
+      ))}
+    </div>
+  );
+}

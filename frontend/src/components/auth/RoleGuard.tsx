@@ -8,11 +8,9 @@ import { setSignedInUser, type SignedInUser } from "./auth.session";
 
 type Role = "ADMIN" | "OM" | "OFFICER";
 const dashboardFor = (role: string) =>
-  role === "ADMIN"
-    ? "/admin/dashboard"
-    : role === "OFFICER"
+  role === "OFFICER"
       ? "/officer/dashboard"
-      : "/om/dashboard";
+      : "/om/sites";
 
 export function RoleGuard({
   roles,
