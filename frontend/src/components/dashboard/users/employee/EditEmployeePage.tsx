@@ -2,7 +2,8 @@
 
 import { ArrowLeft, Save } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BasicEmployeeForm } from "./BasicEmployeeForm";
 import { EmployeeTabs, type EmployeeTab } from "./EmployeeTabs";
 import { Toast } from "../../sites/Toast";
@@ -18,28 +19,15 @@ export function EditEmployeePage() {
   const params = useParams<{ employeeId: string }>();
   const userId = decodeURIComponent(params.employeeId ?? "");
   const [activeTab, setActiveTab] = useState<EmployeeTab>("Basic");
-  const [employee, setEmployee] = useState<EditableEmployee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  const loadEmployee = useCallback(async () => {
-    if (!userId) return;
-    setLoading(true);
-    setError("");
-    try {
-      setEmployee(await getUser(userId));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load employee details.");
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => void loadEmployee(), 0);
-    return () => window.clearTimeout(timer);
-  }, [loadEmployee]);
+  const queryClient = useQueryClient();
+  const { data: employee = null, isLoading: loading, error: queryError } = useQuery<EditableEmployee>({
+    queryKey: ["users", userId],
+    queryFn: () => getUser(userId),
+    enabled: Boolean(userId),
+  });
+  const error = queryError instanceof Error ? queryError.message : queryError ? "Unable to load employee details." : "";
+  const refreshEmployee = () => void queryClient.invalidateQueries({ queryKey: ["users", userId] });
 
   const heading: Record<EmployeeTab, string> = {
     Basic: "Configure basic details",
@@ -84,10 +72,10 @@ export function EditEmployeePage() {
         <EmployeeTabs activeTab={activeTab} onChange={setActiveTab} />
         <h2 className="mt-7 text-lg font-semibold text-blue-800">{heading[activeTab]}</h2>
         <div className="mt-5">
-          {activeTab === "Basic" ? <BasicEmployeeForm key={userId} mode="edit" employeeId={userId} initialData={employee as EmployeeFormValues} formId={formId} onUpdated={() => { setSuccess("Basic profile updated successfully."); void loadEmployee(); }} /> : null}
+          {activeTab === "Basic" ? <BasicEmployeeForm key={userId} mode="edit" employeeId={userId} initialData={employee as EmployeeFormValues} formId={formId} onUpdated={() => { setSuccess("Basic profile updated successfully."); refreshEmployee(); }} /> : null}
           {activeTab === "Employment" ? <EmploymentRecords employeeId={String(employee.employeeId ?? "")} onPrevious={() => setActiveTab("Basic")} onNext={() => setActiveTab("Payroll")} /> : null}
           <div className={activeTab === "Payroll" ? "" : "hidden"}>
-            <PayrollForm userId={userId} onPrevious={() => setActiveTab("Employment")} onNext={() => setActiveTab("Basic")} onExit={() => router.push("/om/users")} onSaved={() => { setSuccess("Payroll records updated successfully."); void loadEmployee(); }} />
+            <PayrollForm userId={userId} onPrevious={() => setActiveTab("Employment")} onNext={() => setActiveTab("Basic")} onExit={() => router.push("/om/users")} onSaved={() => { setSuccess("Payroll records updated successfully."); refreshEmployee(); }} />
           </div>
         </div>
       </section>

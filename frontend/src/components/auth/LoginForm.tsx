@@ -1,31 +1,11 @@
 "use client";
 
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  LockKeyhole,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { login } from "./auth.api";
 import { setSignedInUser } from "./auth.session";
-
-type DemoAccount = {
-  label: string;
-  employeeId: string;
-  company: string;
-  password: string;
-};
-
-const demoAccounts: DemoAccount[] = [
-  { label: "OM", employeeId: "OmFuad", company: "fuad", password: "123fuad" },
-  { label: "Officer", employeeId: "OFuad", company: "fuad", password: "1234fuad" },
-  { label: "Admin", employeeId: "AdminFuad", company: "fuad", password: "12345fuad" },
-];
 
 export function LoginForm() {
   const router = useRouter();
@@ -35,13 +15,6 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const applyDemoAccount = (account: DemoAccount) => {
-    setEmployeeId(account.employeeId);
-    setCompany(account.company);
-    setPassword(account.password);
-    setMessage(`${account.label} credentials are ready.`);
-  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -135,22 +108,6 @@ export function LoginForm() {
             </label>
           </div>
 
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <label className="flex cursor-pointer items-center gap-2 text-slate-600">
-              <input
-                type="checkbox"
-                className="size-4 rounded border-slate-300 accent-blue-600"
-              />
-              Remember me
-            </label>
-            <button
-              type="button"
-              className="font-medium text-blue-600 hover:text-blue-700"
-            >
-              Forgot password?
-            </button>
-          </div>
-
           <button
             type="submit"
             disabled={isSubmitting}
@@ -178,19 +135,19 @@ export function LoginForm() {
               <span className="w-full border-t border-slate-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-slate-500">Or continue with demo account</span>
+              <span className="bg-white px-2 text-slate-500">Available account roles</span>
             </div>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          {demoAccounts.map((account) => (
+          {["OM", "Officer", "Admin"].map((role) => (
             <button
-              key={account.label}
+              key={role}
               type="button"
-              onClick={() => applyDemoAccount(account)}
-              className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              aria-disabled="true"
+              className="h-8 cursor-default rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm"
             >
-              {account.label}
+              {role}
             </button>
           ))}
         </div>

@@ -19,7 +19,17 @@ export async function seedDemoLogin() {
   const users = await prisma.user.findMany({ include: { basic: true, profile: true } });
   await prisma.$transaction(users.map((item) => prisma.account.upsert({
     where: { userId: item.id },
-    update: {},
+    update: {
+      employeeId: item.employeeId,
+      fullName: item.basic?.fullName ?? item.fullName,
+      company: item.company,
+      email: item.basic?.email ?? item.email,
+      profileImageUrl: item.profile?.profileImageUrl ?? item.profileImageUrl,
+      passwordHash: item.passwordHash,
+      passwordChangedAt: item.passwordChangedAt,
+      role: item.role,
+      status: item.status,
+    },
     create: {
       userId: item.id,
       employeeId: item.employeeId,

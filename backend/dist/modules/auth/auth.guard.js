@@ -1,6 +1,10 @@
 import { getCookie } from "hono/cookie";
 import jwt from "jsonwebtoken";
-const secret = process.env.AUTH_JWT_SECRET ?? "development-only-change-this-auth-jwt-secret";
+const configuredSecret = process.env.AUTH_JWT_SECRET;
+if (process.env.NODE_ENV === "production" && (!configuredSecret || configuredSecret.length < 32)) {
+    throw new Error("AUTH_JWT_SECRET must be set to a strong value (at least 32 characters) in production.");
+}
+const secret = configuredSecret ?? "development-only-change-this-auth-jwt-secret";
 export const sessionCookieName = "guardly_session";
 export const normalizeRole = (role) => {
     const value = role.toUpperCase();

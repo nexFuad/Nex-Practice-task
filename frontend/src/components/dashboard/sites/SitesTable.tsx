@@ -1,4 +1,6 @@
 import { EllipsisVertical, MapPin } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { SiteActionsMenu } from "./SiteActionsMenu";
 import type { Site } from "./types";
 
@@ -11,6 +13,7 @@ type Props = {
   onManageClients: (site: Site) => void;
   onToggleStatus: (site: Site) => void;
   onDelete: (site: Site) => void;
+  onCloseMenu: () => void;
 };
 
 export function SitesTable({
@@ -22,7 +25,39 @@ export function SitesTable({
   onManageClients,
   onToggleStatus,
   onDelete,
+  onCloseMenu,
 }: Props) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const close = (event: PointerEvent) => {
+      if (menuRef.current?.contains(event.target as Node) || triggerRef.current?.contains(event.target as Node)) return;
+      onCloseMenu();
+    };
+    const closeOnViewportChange = () => onCloseMenu();
+    document.addEventListener("pointerdown", close);
+    window.addEventListener("resize", closeOnViewportChange);
+    window.addEventListener("scroll", closeOnViewportChange, true);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      window.removeEventListener("resize", closeOnViewportChange);
+      window.removeEventListener("scroll", closeOnViewportChange, true);
+    };
+  }, [onCloseMenu, openMenuId]);
+
+  const openMenu = (siteId: string, button: HTMLButtonElement) => {
+    const rect = button.getBoundingClientRect();
+    const estimatedMenuHeight = 280;
+    const openAbove = rect.bottom + estimatedMenuHeight > window.innerHeight - 12;
+    setMenuPosition({
+      top: openAbove ? Math.max(12, rect.top - estimatedMenuHeight) : rect.bottom + 8,
+      right: Math.max(12, window.innerWidth - rect.right),
+    });
+    onToggleMenu(siteId);
+  };
   return (
     <div className="overflow-x-auto rounded-md border border-slate-200">
       <table className="w-full min-w-[880px] text-left text-sm">
@@ -76,17 +111,18 @@ export function SitesTable({
               </td>
               <td className="relative p-2 text-right">
                 <button
+                  ref={openMenuId === site.id ? triggerRef : undefined}
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
-                    onToggleMenu(site.id);
+                    openMenu(site.id, event.currentTarget);
                   }}
                   className="inline-grid size-8 place-items-center rounded-md hover:bg-slate-100"
                 >
                   <EllipsisVertical className="size-4" />
                 </button>
-                {openMenuId === site.id && (
-                  <div onClick={(event) => event.stopPropagation()}>
+                {openMenuId === site.id && menuPosition && typeof document !== "undefined" && createPortal(
+                  <div ref={menuRef} onClick={(event) => event.stopPropagation()}>
                     <SiteActionsMenu
                       site={site}
                       onView={() => onView(site)}
@@ -94,8 +130,11 @@ export function SitesTable({
                       onManageClients={() => onManageClients(site)}
                       onToggleStatus={() => onToggleStatus(site)}
                       onDelete={() => onDelete(site)}
+                      floating
+                      position={menuPosition}
                     />
-                  </div>
+                  </div>,
+                  document.body,
                 )}
               </td>
             </tr>

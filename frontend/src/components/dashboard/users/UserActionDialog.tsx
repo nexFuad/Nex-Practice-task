@@ -1,7 +1,8 @@
 "use client";
 
 import { AlertCircle, Building2, Mail, MapPin, Phone, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getSites } from "../sites/sites.api";
 import type { DemoUser } from "./types";
 import type { UserMenuAction } from "./UserActionsMenu";
@@ -47,50 +48,19 @@ export function UserActionDialog({
   onDeleted,
   onToast,
 }: Props) {
-  const [employee, setEmployee] = useState<EditableEmployee | null>(null);
-  const [schedule, setSchedule] = useState<UserScheduleRecord[]>([]);
-  const [sites, setSites] = useState<
-    { id: string; name: string; code: string; address: string }[]
-  >([]);
-  const [selectedSites, setSelectedSites] = useState<string[]>([]);
+  const [selectedSites, setSelectedSites] = useState<string[] | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [lastWorkingDay, setLastWorkingDay] = useState("");
-
-  useEffect(() => {
-    getUser(user.databaseId)
-      .then((data) => {
-        setEmployee(data);
-        setSelectedSites((data.siteIds as string[]) ?? []);
-      })
-      .catch((cause) =>
-        setMessage(
-          cause instanceof Error ? cause.message : "Unable to load employee.",
-        ),
-      );
-    if (action === "View Schedule") {
-      getUserSchedule(user.databaseId)
-        .then(setSchedule)
-        .catch((cause) =>
-          setMessage(
-            cause instanceof Error ? cause.message : "Unable to load schedule.",
-          ),
-        );
-    }
-    if (action === "Assign to Sites") {
-      getSites("ACTIVE")
-        .then((items) =>
-          setSites(items.map(({ id, name, code, address }) => ({ id, name, code, address }))),
-        )
-        .catch((cause) =>
-          setMessage(
-            cause instanceof Error ? cause.message : "Unable to load sites.",
-          ),
-        );
-    }
-  }, [action, user.databaseId]);
+  const employeeQuery = useQuery<EditableEmployee>({ queryKey: ["users", user.databaseId], queryFn: () => getUser(user.databaseId) });
+  const scheduleQuery = useQuery<UserScheduleRecord[]>({ queryKey: ["users", user.databaseId, "schedule"], queryFn: () => getUserSchedule(user.databaseId), enabled: action === "View Schedule" });
+  const sitesQuery = useQuery({ queryKey: ["sites", "ACTIVE"], queryFn: () => getSites("ACTIVE"), enabled: action === "Assign to Sites" });
+  const employee = employeeQuery.data ?? null;
+  const schedule = scheduleQuery.data ?? [];
+  const sites = (sitesQuery.data ?? []).map(({ id, name, code, address }) => ({ id, name, code, address }));
+  const effectiveSelectedSites = selectedSites ?? ((employee?.siteIds as string[] | undefined) ?? []);
 
   const assignedSites = useMemo(
     () =>
@@ -103,9 +73,9 @@ export function UserActionDialog({
   const employmentRecord = employmentRecords.find((record) => Boolean(record.dateJoin));
   const toggleSite = (siteId: string) =>
     setSelectedSites((current) =>
-      current.includes(siteId)
-        ? current.filter((id) => id !== siteId)
-        : [...current, siteId],
+      (current ?? effectiveSelectedSites).includes(siteId)
+        ? (current ?? effectiveSelectedSites).filter((id) => id !== siteId)
+        : [...(current ?? effectiveSelectedSites), siteId],
     );
   const finish = (text: string) => {
     setMessage(text);
@@ -116,7 +86,7 @@ export function UserActionDialog({
     setSaving(true);
     try {
       if (action === "Assign to Sites") {
-        await saveUserSites(user.databaseId, selectedSites);
+        await saveUserSites(user.databaseId, effectiveSelectedSites);
         finish("Site assignments saved.");
       } else if (action === "Reset Password") {
         if (password.length < 6)
@@ -199,7 +169,7 @@ export function UserActionDialog({
           {action === "Assign to Sites" && (
             <SitePicker
               sites={sites}
-              selected={selectedSites}
+              selected={effectiveSelectedSites}
               onToggle={toggleSite}
             />
           )}

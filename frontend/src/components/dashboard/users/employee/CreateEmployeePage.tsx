@@ -37,7 +37,7 @@ export function CreateEmployeePage() {
   };
   return (
     <section className="p-5 text-slate-800 sm:p-7 lg:p-8">
-      <header className="flex items-start justify-between gap-4">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Employee Registration Form</h1>
           <p className="mt-1 text-base text-slate-500">
@@ -47,7 +47,7 @@ export function CreateEmployeePage() {
         <button
           type="button"
           onClick={() => router.push("/om/users")}
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm"
         >
           <ArrowLeft className="size-4" />
           Back to Users

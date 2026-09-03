@@ -17,6 +17,16 @@ export type SitePayload = {
   status: SiteStatus;
 };
 
+export type AssignedSiteGuard = {
+  id: string;
+  fullName: string;
+  employeeId: string;
+  role: string;
+  status: string;
+  profileImageUrl: string | null;
+  assignedAt: string;
+};
+
 function toSite(site: ApiSite): Site {
   return {
     ...site,
@@ -61,6 +71,10 @@ export async function deleteSite(id: string) {
 
 export async function getSiteClients(siteId: string) {
   return request<Client[]>(`${sitesUrl}/${siteId}/clients`);
+}
+
+export async function getAssignedSiteGuards(siteId: string) {
+  return request<AssignedSiteGuard[]>(`${sitesUrl}/${siteId}/assigned-guards`);
 }
 
 export async function saveSiteClients(siteId: string, clientIds: string[]) {
