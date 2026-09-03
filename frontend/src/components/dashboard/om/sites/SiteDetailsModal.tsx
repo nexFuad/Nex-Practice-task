@@ -94,9 +94,6 @@ export function SiteDetailsModal({
               <Value icon={<Clock3 />} label="Updated" value="28/08/2026" />
             </div>
           </Card>
-          <Card title="Client Information">
-            <p className="text-slate-500">No clients assigned to this site</p>
-          </Card>
           <Card
             title="Assigned Guards"
             badge={

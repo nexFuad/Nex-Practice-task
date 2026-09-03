@@ -7,6 +7,7 @@ import {
   createAttendance,
   deleteAttendance,
   getAttendance,
+  getAttendanceActiveEmployees,
   getAttendanceEmployees,
   getAttendanceSites,
   updateAttendance,
@@ -54,6 +55,10 @@ export function AttendanceManagement() {
   const employeesQuery = useQuery({
     queryKey: ["attendance-employees", month],
     queryFn: () => getAttendanceEmployees(month),
+  });
+  const activeEmployeesQuery = useQuery({
+    queryKey: ["attendance-active-employees"],
+    queryFn: getAttendanceActiveEmployees,
   });
   const sitesQuery = useQuery({
     queryKey: ["attendance-site-options"],
@@ -107,7 +112,10 @@ export function AttendanceManagement() {
         ? "Unable to load attendance."
         : "";
   const optionError =
-    employeesQuery.error || sitesQuery.error || shiftsQuery.error
+    employeesQuery.error ||
+    activeEmployeesQuery.error ||
+    sitesQuery.error ||
+    shiftsQuery.error
       ? "Unable to load attendance form options."
       : "";
   const exportRows = () => {
@@ -233,7 +241,7 @@ export function AttendanceManagement() {
               </p>
             )}
             <section className="flex min-h-160 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white py-6 shadow-sm">
-              {attendanceQuery.isLoading ? (
+              {attendanceQuery.isLoading || attendanceQuery.isFetching ? (
                 <TableSkeleton columns={10} className="min-h-140" />
               ) : (
                 <>
@@ -265,7 +273,7 @@ export function AttendanceManagement() {
         <AttendanceFormModal
           key={editing === "new" ? "new" : editing.id}
           record={editing === "new" ? null : editing}
-          employees={employeesQuery.data ?? []}
+          employees={activeEmployeesQuery.data ?? []}
           sites={sitesQuery.data ?? []}
           shifts={shiftsQuery.data ?? []}
           onClose={() => setEditing(null)}

@@ -13,7 +13,7 @@ const defaultValues: ShiftPayload = {
   startTime: "08:00",
   endTime: "17:00",
   durationHours: 9,
-  visibleInRoster: true,
+  status: "ACTIVE",
   description: "",
 };
 const safeDuration = (value: unknown, fallback: number) => {
@@ -54,7 +54,7 @@ export function ShiftFormModal({
             shift.durationHours,
             calculateDuration(shift.startTime, shift.endTime),
           ),
-          visibleInRoster: shift.visibleInRoster ?? shift.status === "ACTIVE",
+          status: shift.status,
           description: shift.description ?? "",
         },
   );
@@ -248,22 +248,25 @@ export function ShiftFormModal({
               {errorText(errors.durationHours)}
             </label>
             <div className="text-sm font-medium text-slate-800">
-              Active
+              Status
               <label className="mt-2 flex h-10 cursor-pointer items-center gap-3 text-sm font-normal text-slate-600">
                 <button
                   type="button"
                   role="switch"
-                  aria-checked={values.visibleInRoster}
+                  aria-checked={values.status === "ACTIVE"}
                   onClick={() =>
-                    set("visibleInRoster", !values.visibleInRoster)
+                    set(
+                      "status",
+                      values.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+                    )
                   }
-                  className={`relative h-6 w-11 rounded-full transition ${values.visibleInRoster ? "bg-neutral-950" : "bg-slate-300"}`}
+                  className={`relative h-6 w-11 rounded-full transition ${values.status === "ACTIVE" ? "bg-emerald-600" : "bg-slate-300"}`}
                 >
                   <span
-                    className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition ${values.visibleInRoster ? "left-5" : "left-0.5"}`}
+                    className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition ${values.status === "ACTIVE" ? "left-5" : "left-0.5"}`}
                   />
                 </button>
-                Visible in roster
+                {values.status === "ACTIVE" ? "Active" : "Inactive"}
               </label>
             </div>
           </div>

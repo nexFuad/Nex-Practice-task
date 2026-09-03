@@ -1,4 +1,4 @@
-import type { Client, Site, SiteStatus } from "./types";
+import type { Site, SiteStatus } from "./types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const sitesUrl = `${apiBaseUrl}/api/sites`;
@@ -117,19 +117,6 @@ export async function deleteSite(id: string) {
   await request<void>(`${sitesUrl}/${id}`, { method: "DELETE" });
 }
 
-export async function getSiteClients(siteId: string) {
-  return request<Client[]>(`${sitesUrl}/${siteId}/clients`);
-}
-
 export async function getAssignedSiteGuards(siteId: string) {
   return request<AssignedSiteGuard[]>(`${sitesUrl}/${siteId}/assigned-guards`);
-}
-
-export async function saveSiteClients(siteId: string, clientIds: string[]) {
-  return toSite(
-    await request<ApiSite>(`${sitesUrl}/${siteId}/clients`, {
-      method: "PUT",
-      body: JSON.stringify({ clientIds }),
-    }),
-  );
 }

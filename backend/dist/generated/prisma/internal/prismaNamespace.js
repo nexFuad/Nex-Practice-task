@@ -85,9 +85,7 @@ export const ModelName = {
     PwmEmploymentRecord: 'PwmEmploymentRecord',
     AttendanceRecord: 'AttendanceRecord',
     Shift: 'Shift',
-    UserSite: 'UserSite',
-    Client: 'Client',
-    SiteClient: 'SiteClient'
+    UserSite: 'UserSite'
 };
 /**
  * Enums
@@ -378,17 +376,6 @@ export const ShiftScalarFieldEnum = {
 export const UserSiteScalarFieldEnum = {
     userId: 'userId',
     siteId: 'siteId',
-    assignedAt: 'assignedAt'
-};
-export const ClientScalarFieldEnum = {
-    id: 'id',
-    name: 'name',
-    email: 'email',
-    createdAt: 'createdAt'
-};
-export const SiteClientScalarFieldEnum = {
-    siteId: 'siteId',
-    clientId: 'clientId',
     assignedAt: 'assignedAt'
 };
 export const SortOrder = {

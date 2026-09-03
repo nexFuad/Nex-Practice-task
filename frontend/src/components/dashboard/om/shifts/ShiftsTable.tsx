@@ -1,15 +1,13 @@
-import { Pencil, Power, PowerOff, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Shift } from "./types";
 
 export function ShiftsTable({
   shifts,
   onEdit,
-  onStatus,
   onDelete,
 }: {
   shifts: Shift[];
   onEdit: (shift: Shift) => void;
-  onStatus: (shift: Shift) => void;
   onDelete: (shift: Shift) => void;
 }) {
   const headings = [
@@ -18,7 +16,7 @@ export function ShiftsTable({
     "Color",
     "Time",
     "Duration",
-    "Visible in roster",
+    "Status",
     "Actions",
   ];
   return (
@@ -74,9 +72,9 @@ export function ShiftsTable({
                 </td>
                 <td className="p-2">
                   <span
-                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${shift.visibleInRoster ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-700"}`}
+                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${shift.status === "ACTIVE" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}
                   >
-                    {shift.visibleInRoster ? "Visible" : "Hidden"}
+                    {shift.status === "ACTIVE" ? "Active" : "Inactive"}
                   </span>
                 </td>
                 <td className="p-2">
@@ -88,18 +86,6 @@ export function ShiftsTable({
                       aria-label="Edit shift"
                     >
                       <Pencil className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onStatus(shift)}
-                      className="grid size-8 place-items-center rounded-md text-slate-600 hover:bg-slate-100"
-                      aria-label="Change roster visibility"
-                    >
-                      {shift.visibleInRoster ? (
-                        <PowerOff className="size-4" />
-                      ) : (
-                        <Power className="size-4" />
-                      )}
                     </button>
                     <button
                       type="button"

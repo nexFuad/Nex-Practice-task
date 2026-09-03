@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 
 const shiftsRoutes = new Hono();
-type ShiftInput = { companyId?: string; name?: string; code?: string; category?: string; color?: string; startTime?: string; endTime?: string; durationHours?: number; visibleInRoster?: boolean; description?: string; status?: "ACTIVE" | "INACTIVE" };
+type ShiftInput = { companyId?: string; name?: string; code?: string; category?: string; color?: string; startTime?: string; endTime?: string; durationHours?: number; description?: string | null; status?: "ACTIVE" | "INACTIVE" };
 const clean = (value?: string) => value?.trim() || undefined;
 
 async function shiftData(input: ShiftInput) {
@@ -12,8 +12,8 @@ async function shiftData(input: ShiftInput) {
   if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error("Color must be a valid 6-digit hex value, such as #E5E7EB.");
   const durationHours = Number(input.durationHours);
   if (!Number.isFinite(durationHours) || durationHours < 0) throw new Error("Duration must be zero or greater.");
-  const visibleInRoster = input.visibleInRoster !== false;
-  return { companyId: clean(input.companyId) ?? "default", name: input.name!.trim(), code: input.code!.trim().toUpperCase(), category: clean(input.category) ?? "Main", color: color.toUpperCase(), startTime: input.startTime!.trim(), endTime: input.endTime!.trim(), durationHours, visibleInRoster, description: clean(input.description), breakMinutes: 0, siteId: null, siteName: null, status: visibleInRoster ? "ACTIVE" : "INACTIVE" } as const;
+  const status = input.status === "INACTIVE" ? "INACTIVE" : "ACTIVE";
+  return { companyId: clean(input.companyId) ?? "default", name: input.name!.trim(), code: input.code!.trim().toUpperCase(), category: clean(input.category) ?? "Main", color: color.toUpperCase(), startTime: input.startTime!.trim(), endTime: input.endTime!.trim(), durationHours, visibleInRoster: status === "ACTIVE", description: clean(input.description ?? undefined), breakMinutes: 0, siteId: null, siteName: null, status } as const;
 }
 
 shiftsRoutes.get("/", async (c) => {
@@ -33,6 +33,5 @@ shiftsRoutes.get("/", async (c) => {
 });
 shiftsRoutes.post("/", async (c) => { try { return c.json(await prisma.shift.create({ data: await shiftData(await c.req.json<ShiftInput>()) }), 201); } catch (error) { const message = error instanceof Error && "code" in error && (error as { code?: string }).code === "P2002" ? "A shift with this code already exists for this company." : error instanceof Error ? error.message : "Unable to create shift."; return c.json({ message }, 400); } });
 shiftsRoutes.put("/:id", async (c) => { try { return c.json(await prisma.shift.update({ where: { id: c.req.param("id") }, data: await shiftData(await c.req.json<ShiftInput>()) })); } catch (error) { const message = error instanceof Error && "code" in error && (error as { code?: string }).code === "P2002" ? "A shift with this code already exists for this company." : "Shift not found or could not be updated."; return c.json({ message }, 400); } });
-shiftsRoutes.patch("/:id/status", async (c) => { const { status } = await c.req.json<{ status?: "ACTIVE" | "INACTIVE" }>(); if (status !== "ACTIVE" && status !== "INACTIVE") return c.json({ message: "Invalid shift status." }, 400); try { return c.json(await prisma.shift.update({ where: { id: c.req.param("id") }, data: { status } })); } catch { return c.json({ message: "Shift not found." }, 404); } });
 shiftsRoutes.delete("/:id", async (c) => { try { await prisma.shift.delete({ where: { id: c.req.param("id") } }); return c.body(null, 204); } catch { return c.json({ message: "Shift not found." }, 404); } });
 export { shiftsRoutes };

@@ -1,11 +1,10 @@
-import { Building2, Eye, PowerOff, SquarePen, Trash2 } from "lucide-react";
+import { Eye, PowerOff, SquarePen, Trash2 } from "lucide-react";
 import type { Site } from "./types";
 
 type Props = {
   site: Site;
   onView: () => void;
   onEdit: () => void;
-  onManageClients: () => void;
   onToggleStatus: () => void;
   onDelete: () => void;
   floating?: boolean;
@@ -16,7 +15,6 @@ export function SiteActionsMenu({
   site,
   onView,
   onEdit,
-  onManageClients,
   onToggleStatus,
   onDelete,
   floating = false,
@@ -35,9 +33,6 @@ export function SiteActionsMenu({
       </Action>
       <Action onClick={onEdit} icon={<SquarePen />}>
         Edit Site
-      </Action>
-      <Action onClick={onManageClients} icon={<Building2 />}>
-        Manage Clients
       </Action>
       <div role="separator" className="-mx-1.5 my-1.5 h-px bg-slate-200" />
       <Action onClick={onToggleStatus} icon={<PowerOff />}>

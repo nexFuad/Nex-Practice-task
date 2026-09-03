@@ -120,8 +120,7 @@ export function UsersManagement() {
         />
 
         <section className="flex min-h-[640px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white py-6 shadow-sm">
-          {usersQuery.isLoading ||
-          (usersQuery.isFetching && !usersQuery.data) ? (
+          {usersQuery.isLoading || usersQuery.isFetching ? (
             <div className="flex-1">
               <UsersTableSkeleton />
             </div>

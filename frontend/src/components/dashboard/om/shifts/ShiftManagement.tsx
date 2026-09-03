@@ -8,7 +8,6 @@ import {
   deleteShift,
   getShifts,
   updateShift,
-  updateShiftStatus,
   type PaginatedShifts,
 } from "./shifts.api";
 import { ShiftFormModal } from "./ShiftFormModal";
@@ -32,6 +31,7 @@ export function ShiftManagement() {
   const {
     data,
     isLoading: loading,
+    isFetching,
     error: queryError,
   } = useQuery<PaginatedShifts>({
     queryKey: [
@@ -47,16 +47,6 @@ export function ShiftManagement() {
   const saveMutation = useMutation({
     mutationFn: ({ id, payload }: { id?: string; payload: ShiftPayload }) =>
       id ? updateShift(id, payload) : createShift(payload),
-    onSuccess: invalidateShifts,
-  });
-  const statusMutation = useMutation({
-    mutationFn: ({
-      id,
-      status: nextStatus,
-    }: {
-      id: string;
-      status: "ACTIVE" | "INACTIVE";
-    }) => updateShiftStatus(id, nextStatus),
     onSuccess: invalidateShifts,
   });
   const deleteMutation = useMutation({
@@ -104,19 +94,6 @@ export function ShiftManagement() {
       );
     }
   };
-  const toggle = async (shift: Shift) => {
-    try {
-      await statusMutation.mutateAsync({
-        id: shift.id,
-        status: shift.visibleInRoster ? "INACTIVE" : "ACTIVE",
-      });
-      setToast("Shift roster visibility updated.");
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Unable to update shift.",
-      );
-    }
-  };
   const remove = async (shift: Shift) => {
     if (!window.confirm(`Delete ${shift.name}?`)) return;
     try {
@@ -138,7 +115,7 @@ export function ShiftManagement() {
         shift.startTime,
         shift.endTime,
         shift.durationHours,
-        shift.visibleInRoster ? "Visible" : "Hidden",
+        shift.status === "ACTIVE" ? "Active" : "Inactive",
         shift.description ?? "",
       ].join(","),
     );
@@ -147,7 +124,7 @@ export function ShiftManagement() {
       new Blob(
         [
           [
-            "Name,Code,Category,Color,Start,End,Duration Hours,Visible in Roster,Description",
+            "Name,Code,Category,Color,Start,End,Duration Hours,Status,Description",
             ...rows,
           ].join("\n"),
         ],
@@ -224,7 +201,7 @@ export function ShiftManagement() {
                 Export
               </button>
             </div>
-            {loading ? (
+            {loading || isFetching ? (
               <TableSkeleton columns={7} className="min-h-115" />
             ) : (
               <div className="flex flex-1 flex-col">
@@ -232,7 +209,6 @@ export function ShiftManagement() {
                   <ShiftsTable
                     shifts={shifts}
                     onEdit={setForm}
-                    onStatus={(shift) => void toggle(shift)}
                     onDelete={(shift) => void remove(shift)}
                   />
                 </div>
