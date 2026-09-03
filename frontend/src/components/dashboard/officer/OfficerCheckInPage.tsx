@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   activeAttendance,
   attendanceHistory,
@@ -103,12 +104,6 @@ const timingLabel = (
 };
 
 export function OfficerCheckInPage() {
-  const [sites, setSites] = useState<OfficerSite[]>([]);
-  const [shifts, setShifts] = useState<OfficerShift[]>([]);
-  const [active, setActive] = useState<OfficerRecord | null>(null);
-  const [todayRecord, setTodayRecord] = useState<OfficerRecord | null>(null);
-  const [records, setRecords] = useState<OfficerRecord[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
   const [type, setType] = useState("ALL");
@@ -116,35 +111,16 @@ export function OfficerCheckInPage() {
   const [mode, setMode] = useState<"in" | "out" | null>(null);
   const [toast, setToast] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  useEffect(() => {
-    let cancelled = false;
-    const loadAttendance = async () => {
-      try {
-        const [options, activeResult, history] = await Promise.all([
-          attendanceOptions(),
-          activeAttendance(),
-          attendanceHistory(page, query, type, date),
-        ]);
-        if (cancelled) return;
-        setSites(options.sites);
-        setShifts(options.shifts);
-        setActive(activeResult.record);
-        setTodayRecord(activeResult.todayRecord);
-        setRecords(history.records);
-        setTotal(history.total);
-      } catch (error) {
-        if (!cancelled)
-          setToast(
-            error instanceof Error ? error.message : "Unable to load attendance.",
-          );
-      }
-    };
-    void loadAttendance();
-    return () => {
-      cancelled = true;
-    };
-  }, [page, query, type, date, refreshKey]);
+  const queryClient = useQueryClient();
+  const optionsQuery = useQuery({ queryKey: ["officer", "attendance", "options"], queryFn: attendanceOptions });
+  const activeQuery = useQuery({ queryKey: ["officer", "attendance", "active"], queryFn: activeAttendance });
+  const historyQuery = useQuery({ queryKey: ["officer", "attendance", "history", page, query, type, date], queryFn: () => attendanceHistory(page, query, type, date) });
+  const sites = optionsQuery.data?.sites ?? [];
+  const shifts = optionsQuery.data?.shifts ?? [];
+  const active = activeQuery.data?.record ?? null;
+  const todayRecord = activeQuery.data?.todayRecord ?? null;
+  const records = historyQuery.data?.records ?? [];
+  const total = historyQuery.data?.total ?? 0;
   const success = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(""), 4_000);
@@ -195,7 +171,7 @@ export function OfficerCheckInPage() {
           onSaved={async (message) => {
             setMode(null);
             success(message);
-            setRefreshKey((current) => current + 1);
+            await Promise.all([queryClient.invalidateQueries({ queryKey: ["officer", "attendance", "active"] }), queryClient.invalidateQueries({ queryKey: ["officer", "attendance", "history"] })]);
           }}
         />
       )}
@@ -375,7 +351,7 @@ function AttendanceModal({
       aria-modal="true"
     >
       <div className="flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-xl">
-        <header className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <header className="flex items-start justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
           <div>
             <h2 className="text-lg font-semibold">
               {mode === "in" ? "Check In" : "Check Out"}
@@ -391,7 +367,7 @@ function AttendanceModal({
             <X className="size-5" />
           </button>
         </header>
-        <div className="space-y-4 overflow-y-auto px-6 py-5">
+        <div className="space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
           {error && (
             <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">
               {error}
@@ -495,7 +471,7 @@ function AttendanceModal({
             </div>
           </div>
         </div>
-        <footer className="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
+        <footer className="grid grid-cols-2 gap-2 border-t border-slate-200 px-4 py-4 sm:flex sm:justify-end sm:px-6">
           <button
             type="button"
             onClick={onClose}
@@ -740,8 +716,8 @@ function History({
   const pages = Math.max(1, Math.ceil(total / 10));
   return (
     <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap gap-3">
-        <label className="relative min-w-[220px] flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <label className="relative min-w-0 flex-1 sm:min-w-[220px]">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <input
             value={query}
@@ -759,7 +735,7 @@ function History({
             setPage(1);
             setType(event.target.value);
           }}
-          className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+          className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm sm:w-auto"
         >
           <option value="ALL">All</option>
           <option value="CHECK_IN">Check In</option>
@@ -772,7 +748,7 @@ function History({
             setPage(1);
             setDate(event.target.value);
           }}
-          className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+          className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm sm:w-auto"
         />
       </div>
       <div className="mt-4 overflow-x-auto">

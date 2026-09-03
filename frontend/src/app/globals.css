@@ -19,6 +19,45 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Dashboard pages must remain usable when the persistent desktop sidebar is
+   replaced by the mobile navigation drawer. */
+html,
+body {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+main {
+  min-width: 0;
+}
+
+/* Tables intentionally keep their desktop columns. On a narrow viewport they
+   scroll inside their card instead of widening the whole page. */
+.overflow-x-auto,
+.overflow-x-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 639px) {
+  /* 16px prevents automatic iOS zoom while editing a form. */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .fixed > form.max-w-5xl {
+    max-height: calc(100vh - 1rem);
+    padding: 1rem;
+  }
+
+  .fixed > form.max-w-5xl input,
+  .fixed > form.max-w-5xl select {
+    height: 2.5rem;
+  }
+}
+
 /* Keep contextual action menus above dashboard tables on desktop. */
 @media (min-width: 768px) {
   .overflow-x-auto {

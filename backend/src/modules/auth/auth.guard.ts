@@ -4,7 +4,11 @@ import jwt from "jsonwebtoken";
 
 export type AppRole = "ADMIN" | "OM" | "OFFICER";
 export type AuthSession = { accountId: string; userId: string; employeeId: string; role: AppRole };
-const secret = process.env.AUTH_JWT_SECRET ?? "development-only-change-this-auth-jwt-secret";
+const configuredSecret = process.env.AUTH_JWT_SECRET;
+if (process.env.NODE_ENV === "production" && (!configuredSecret || configuredSecret.length < 32)) {
+  throw new Error("AUTH_JWT_SECRET must be set to a strong value (at least 32 characters) in production.");
+}
+const secret = configuredSecret ?? "development-only-change-this-auth-jwt-secret";
 export const sessionCookieName = "guardly_session";
 
 export const normalizeRole = (role: string): AppRole => {

@@ -8,6 +8,8 @@ type Props = {
   onManageClients: () => void;
   onToggleStatus: () => void;
   onDelete: () => void;
+  floating?: boolean;
+  position?: { top: number; right: number };
 };
 
 export function SiteActionsMenu({
@@ -17,12 +19,15 @@ export function SiteActionsMenu({
   onManageClients,
   onToggleStatus,
   onDelete,
+  floating = false,
+  position,
 }: Props) {
   return (
     <div
       role="menu"
       aria-label="Site actions"
-      className="absolute right-0 top-9 z-30 w-44 text-left rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+      style={position}
+      className={`${floating ? "fixed" : "absolute right-0 top-9"} z-[60] w-64 rounded-xl border border-slate-200 bg-white p-1.5 text-left shadow-xl sm:w-44`}
     >
       <p className="px-3 py-2 text-sm font-medium text-slate-900">Actions</p>
       <Action onClick={onView} icon={<Eye />}>
@@ -61,7 +66,7 @@ function Action({
       role="menuitem"
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium outline-none transition ${destructive ? "text-red-600 hover:bg-red-50" : "text-slate-800 hover:bg-slate-50"}`}
+      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium outline-none transition sm:py-2 sm:text-xs ${destructive ? "text-red-600 hover:bg-red-50" : "text-slate-800 hover:bg-slate-50"}`}
     >
       <span
         className={`flex size-4 shrink-0 items-center justify-center [&>svg]:size-5 ${destructive ? "text-red-500" : "text-slate-500"}`}

@@ -1,7 +1,8 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { UserStats } from "./UserStats";
 import { UsersFilters } from "./UsersFilters";
@@ -23,15 +24,14 @@ export function UsersManagement() {
   const [page, setPage] = useState(1);
   const [isPageLoading, setIsPageLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [databaseUsers, setDatabaseUsers] = useState<DemoUser[]>([]);
   const [activeAction, setActiveAction] = useState<{ user: DemoUser; action: UserMenuAction } | null>(null);
   const [toast, setToast] = useState("");
-  const loadUsers = () => {
-    getUsers().then(setDatabaseUsers).catch(() => undefined);
-  };
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  const queryClient = useQueryClient();
+  const { data: databaseUsers = [] } = useQuery<DemoUser[]>({ queryKey: ["users"], queryFn: getUsers });
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
   const allUsers = databaseUsers;
   const filteredUsers = useMemo(
     () =>
@@ -68,10 +68,7 @@ export function UsersManagement() {
   };
   const deleteUserFromMenu = async (user: DemoUser) => {
     try {
-      await deleteUser(user.databaseId);
-      setDatabaseUsers((current) =>
-        current.filter((item) => item.databaseId !== user.databaseId),
-      );
+      await deleteMutation.mutateAsync(user.databaseId);
       setToast(`${user.name} was deleted successfully.`);
     } catch (cause) {
       console.error("Unable to delete user:", cause);
@@ -93,7 +90,7 @@ export function UsersManagement() {
         <button
           type="button"
           onClick={() => router.push("/om/users/create-new-employee")}
-          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-neutral-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800"
+          className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-neutral-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800 sm:h-9 sm:self-auto"
         >
           <Plus className="size-4" />
           Add New User
@@ -140,7 +137,7 @@ export function UsersManagement() {
       />
       </section>
       </div>
-      {activeAction && <UserActionDialog user={activeAction.user} action={activeAction.action} onClose={() => setActiveAction(null)} onChanged={loadUsers} onToast={setToast} onDeleted={(databaseId) => setDatabaseUsers((current) => current.filter((user) => user.databaseId !== databaseId))} />}
+      {activeAction && <UserActionDialog user={activeAction.user} action={activeAction.action} onClose={() => setActiveAction(null)} onChanged={() => void queryClient.invalidateQueries({ queryKey: ["users"] })} onToast={setToast} onDeleted={() => void queryClient.invalidateQueries({ queryKey: ["users"] })} />}
       {toast && <Toast message={toast} onClose={() => setToast("")} />}
     </section>
   );

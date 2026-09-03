@@ -39,6 +39,43 @@ sitesRoutes.get("/:id/clients", async (c) => {
   return c.json(site.siteClients.map(({ client }) => client));
 });
 
+sitesRoutes.get("/:id/assigned-guards", async (c) => {
+  const site = await prisma.site.findUnique({
+    where: { id: c.req.param("id") },
+    select: {
+      userSites: {
+        orderBy: { assignedAt: "desc" },
+        select: {
+          assignedAt: true,
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              employeeId: true,
+              role: true,
+              status: true,
+              profileImageUrl: true,
+              basic: { select: { fullName: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!site) return c.json({ message: "Site not found." }, 404);
+  return c.json(
+    site.userSites.map(({ user, assignedAt }) => ({
+      id: user.id,
+      fullName: user.basic?.fullName || user.fullName,
+      employeeId: user.employeeId,
+      role: user.role,
+      status: user.status,
+      profileImageUrl: user.profileImageUrl,
+      assignedAt,
+    })),
+  );
+});
+
 sitesRoutes.put("/:id/clients", async (c) => {
   const { clientIds } = await c.req.json<{ clientIds?: string[] }>();
   if (!Array.isArray(clientIds) || clientIds.some((id) => typeof id !== "string")) return c.json({ message: "clientIds must be an array of client IDs." }, 400);

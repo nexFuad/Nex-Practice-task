@@ -8,11 +8,13 @@ import {
   ChevronRight,
   LayoutDashboard,
   LogOut,
+  Menu,
   MapPin,
 
   Settings,
   ShieldCheck,
   Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -62,6 +64,7 @@ export function OperationsSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [hrOpen, setHrOpen] = useState(pathname.startsWith("/om/hr"));
   const [accountOpen, setAccountOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<SignedInUser | null>(null);
   const accountRef = useRef<HTMLDivElement>(null);
   const active = (href: string) => pathname === href;
@@ -105,7 +108,23 @@ export function OperationsSidebar() {
       )}
     </span>
   );
+  const mobileNavigation = (
+    <nav className="flex-1 space-y-1 overflow-y-auto p-3 pt-5">
+      {links.slice(0, 4).map(([label, href, Icon]) => (
+        <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm ${active(href) ? "bg-blue-50 font-semibold text-blue-600" : "text-slate-600 hover:bg-slate-100"}`}><Icon className="size-4" />{label}</Link>
+      ))}
+      <p className="px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">HR</p>
+      <Link href="/om/hr/attendance" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm ${active("/om/hr/attendance") ? "bg-blue-50 font-semibold text-blue-600" : "text-slate-600 hover:bg-slate-100"}`}><Users className="size-4" />Attendance</Link>
+    </nav>
+  );
+  const mobileAccount = <div className="border-t border-slate-200 p-4"><div className="flex items-center gap-3">{avatar}<div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{name}{role ? ` (${role})` : ""}</p><p className="truncate text-xs text-slate-500">{subtitle}</p></div></div><Link href="/om/profile" onClick={() => setMobileOpen(false)} className="mt-3 flex items-center gap-2 rounded-md px-2 py-2 text-sm text-slate-700 hover:bg-slate-50"><Settings className="size-4" />Account Settings</Link><button onClick={() => void signOut()} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50"><LogOut className="size-4" />Logout</button></div>;
   return (
+    <>
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
+      <Link href="/om/dashboard" className="flex items-center gap-2.5"><span className="grid size-9 place-items-center rounded-lg bg-blue-600 text-white"><ShieldCheck className="size-5" /></span><span className="text-lg font-bold text-slate-800">Azovis</span></Link>
+      <button type="button" onClick={() => setMobileOpen(true)} className="grid size-10 place-items-center rounded-lg text-slate-700 hover:bg-slate-100" aria-label="Open navigation menu"><Menu className="size-5" /></button>
+    </header>
+    {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button type="button" aria-label="Close navigation menu" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-slate-950/40" /><aside className="relative flex h-full w-[min(18rem,86vw)] flex-col bg-white shadow-2xl"><div className="flex h-16 items-center justify-between border-b border-slate-200 px-4"><span className="flex items-center gap-2.5 text-lg font-bold text-slate-800"><span className="grid size-9 place-items-center rounded-lg bg-blue-600 text-white"><ShieldCheck className="size-5" /></span>Azovis</span><button type="button" onClick={() => setMobileOpen(false)} className="grid size-9 place-items-center rounded-lg text-slate-600 hover:bg-slate-100" aria-label="Close navigation menu"><X className="size-5" /></button></div>{mobileNavigation}{mobileAccount}</aside></div>}
     <aside
       className={`sticky top-0 hidden h-screen shrink-0 border-r border-slate-200 bg-white transition-[width] duration-200 lg:block ${collapsed ? "w-20" : "w-64"}`}
     >
@@ -217,5 +236,6 @@ export function OperationsSidebar() {
         )}
       </div>
     </aside>
+    </>
   );
 }
