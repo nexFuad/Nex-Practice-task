@@ -203,6 +203,24 @@ export default function ShiftsPage() {
   return (
     <section className="min-w-0 px-5 pb-5 pt-2 text-slate-800">
       <div className="space-y-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-800">
+              Shift Management
+            </h1>
+            <p className="text-sm text-slate-500">
+              Manage shift schedules and site assignments
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setForm("new")}
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-neutral-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800 sm:h-9"
+          >
+            <Plus className="size-4" />
+            Add Shift
+          </button>
+        </header>
         <ShiftStats values={stats} />
         <section className="flex flex-col">
           <div className="flex flex-1 flex-col space-y-4 pt-4">
@@ -235,14 +253,6 @@ export default function ShiftsPage() {
                 >
                   <Download className="size-4" />
                   Export
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm("new")}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
-                >
-                  <Plus className="size-4" />
-                  Add Shift
                 </button>
               </div>
             </div>
