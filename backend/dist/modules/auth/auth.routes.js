@@ -21,13 +21,25 @@ const accountWithProfile = {
 const normalizedId = (employeeId) => employeeId.trim().toLowerCase();
 const isSupportedAccountRole = (role) => ["ADMIN", "OM", "OFFICER"].includes(role.trim().toUpperCase());
 const dashboardFor = (role) => role === "OFFICER" ? "/officer/check-in" : "/om/site";
-const setAuthCookies = (c, session, rememberMe) => {
+const authCookieOptions = () => {
     const production = process.env.NODE_ENV === "production";
-    const shared = {
+    return {
         httpOnly: true,
         sameSite: production ? "None" : "Lax",
         secure: production,
     };
+};
+const clearAuthCookies = (c) => {
+    const shared = authCookieOptions();
+    deleteCookie(c, sessionCookieName, { ...shared, path: "/" });
+    deleteCookie(c, refreshCookieName, {
+        ...shared,
+        path: "/api/auth/refresh",
+    });
+    deleteCookie(c, "guardly_session", { ...shared, path: "/" });
+};
+const setAuthCookies = (c, session, rememberMe) => {
+    const shared = authCookieOptions();
     setCookie(c, sessionCookieName, createSessionToken(session), {
         ...shared,
         path: "/",
@@ -41,7 +53,10 @@ const setAuthCookies = (c, session, rememberMe) => {
         });
     }
     else {
-        deleteCookie(c, refreshCookieName, { path: "/api/auth/refresh" });
+        deleteCookie(c, refreshCookieName, {
+            ...shared,
+            path: "/api/auth/refresh",
+        });
     }
 };
 const profileResponse = (account) => ({
@@ -119,9 +134,7 @@ authRoutes.get("/session", async (c) => {
     });
 });
 authRoutes.post("/logout", (c) => {
-    deleteCookie(c, sessionCookieName, { path: "/" });
-    deleteCookie(c, refreshCookieName, { path: "/api/auth/refresh" });
-    deleteCookie(c, "guardly_session", { path: "/" });
+    clearAuthCookies(c);
     return c.json({ message: "Logged out." });
 });
 authRoutes.get("/profile/:employeeId", async (c) => {

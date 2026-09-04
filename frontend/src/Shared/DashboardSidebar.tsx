@@ -20,8 +20,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   authChangeEvent,
-  clearSignedInUser,
   getSignedInUser,
+  markExplicitLogout,
   type SignedInUser,
 } from "@/app/login/auth.session";
 import { logout } from "@/Services/auth";
@@ -86,12 +86,13 @@ export function DashboardSidebar() {
     try {
       await logout();
     } catch {
-      // Clear the local UI session even when the server session is unavailable.
+      // The local session must still end if the network becomes unavailable.
+    } finally {
+      markExplicitLogout();
     }
-    clearSignedInUser();
     // A full navigation clears every in-memory TanStack Query session cache.
     // This prevents a stale /session response from redirecting back to a dashboard.
-    window.location.replace("/");
+    window.location.replace("/login?logged-out=1");
   };
   const avatar = (
     <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-blue-600 text-sm font-semibold text-white">

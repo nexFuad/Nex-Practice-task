@@ -7,12 +7,14 @@ import { getSession } from "@/Services/auth";
 import {
   clearSignedInUser,
   getSignedInUser,
+  hasExplicitLogout,
   setSignedInUser,
 } from "./login/auth.session";
 
 /** Redirects an authenticated user before they can use public/login pages. */
 export function SessionRedirect({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const explicitlyLoggedOut = hasExplicitLogout();
   const hasStoredUser = Boolean(getSignedInUser());
   const { data, isError, isLoading } = useQuery({
     queryKey: ["auth", "session"],
@@ -21,16 +23,17 @@ export function SessionRedirect({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
+    if (explicitlyLoggedOut) return;
     if (data) {
       setSignedInUser(data.user);
       router.replace(data.dashboardPath);
       return;
     }
     if (isError && hasStoredUser) clearSignedInUser();
-  }, [data, hasStoredUser, isError, router]);
+  }, [data, explicitlyLoggedOut, hasStoredUser, isError, router]);
 
   // Do not flash the landing/login page until the server has validated a saved session.
-  if (isLoading || data) {
+  if (!explicitlyLoggedOut && (isLoading || data)) {
     return (
       <main
         className="grid min-h-screen place-items-center bg-white"
