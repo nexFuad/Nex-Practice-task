@@ -13,14 +13,26 @@ import { dashboardRoutes } from "./modules/dashboard/dashboard.routes.js";
 import { requireRoles } from "./modules/auth/auth.guard.js";
 import { officerAttendanceRoutes } from "./modules/attendance/officer-attendance.routes.js";
 const app = new Hono();
-const configuredFrontendUrl = process.env.FRONTEND_URL ?? "http://localhost:3000";
+const configuredFrontendUrls = (process.env.FRONTEND_URLS ??
+    process.env.FRONTEND_URL ??
+    "http://localhost:3000")
+    .split(",")
+    .map((url) => url.trim())
+    .filter(Boolean);
 const production = process.env.NODE_ENV === "production";
-if (production && !process.env.FRONTEND_URL?.startsWith("https://")) {
-    throw new Error("FRONTEND_URL must be the HTTPS Vercel domain in production.");
+if (production &&
+    (!configuredFrontendUrls.length ||
+        configuredFrontendUrls.some((url) => !url.startsWith("https://")))) {
+    throw new Error("FRONTEND_URLS must contain one or more HTTPS frontend domains in production.");
 }
 const allowedFrontendOrigins = new Set(production
-    ? [configuredFrontendUrl]
-    : [configuredFrontendUrl, "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"]);
+    ? configuredFrontendUrls
+    : [
+        ...configuredFrontendUrls,
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+    ]);
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 app.use("*", async (c, next) => {
     c.header("X-Content-Type-Options", "nosniff");

@@ -15,16 +15,33 @@ import { officerAttendanceRoutes } from "./modules/attendance/officer-attendance
 
 const app = new Hono();
 
-const configuredFrontendUrl =
-  process.env.FRONTEND_URL ?? "http://localhost:3000";
+const configuredFrontendUrls = (
+  process.env.FRONTEND_URLS ??
+  process.env.FRONTEND_URL ??
+  "http://localhost:3000"
+)
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
 const production = process.env.NODE_ENV === "production";
-if (production && !process.env.FRONTEND_URL?.startsWith("https://")) {
-  throw new Error("FRONTEND_URL must be the HTTPS Vercel domain in production.");
+if (
+  production &&
+  (!configuredFrontendUrls.length ||
+    configuredFrontendUrls.some((url) => !url.startsWith("https://")))
+) {
+  throw new Error(
+    "FRONTEND_URLS must contain one or more HTTPS frontend domains in production.",
+  );
 }
 const allowedFrontendOrigins = new Set(
   production
-    ? [configuredFrontendUrl]
-    : [configuredFrontendUrl, "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    ? configuredFrontendUrls
+    : [
+        ...configuredFrontendUrls,
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+      ],
 );
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -32,9 +49,19 @@ app.use("*", async (c, next) => {
   c.header("X-Content-Type-Options", "nosniff");
   c.header("X-Frame-Options", "DENY");
   c.header("Referrer-Policy", "strict-origin-when-cross-origin");
-  c.header("Permissions-Policy", "camera=(self), geolocation=(self), microphone=()");
-  c.header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
-  if (production) c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  c.header(
+    "Permissions-Policy",
+    "camera=(self), geolocation=(self), microphone=()",
+  );
+  c.header(
+    "Content-Security-Policy",
+    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+  );
+  if (production)
+    c.header(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains",
+    );
   await next();
 });
 
