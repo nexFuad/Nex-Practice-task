@@ -140,8 +140,6 @@ usersRoutes.get("/", async (c) => {
             ],
         });
     }
-    if (role === "OFFICER")
-        filters.push({ role: "OFFICER" });
     if (role === "OM") {
         filters.push({
             OR: [
@@ -149,6 +147,9 @@ usersRoutes.get("/", async (c) => {
                 { role: { contains: "MANAGER", mode: "insensitive" } },
             ],
         });
+    }
+    else if (role) {
+        filters.push({ role });
     }
     const resigned = {
         user: { employmentRecords: { some: { status: { equals: "Resigned", mode: "insensitive" }, dateLeft: { not: null } } } },
@@ -185,6 +186,34 @@ usersRoutes.get("/", async (c) => {
         pageSize,
         total,
         stats: { total, activeOfficers, operationManagers },
+    });
+});
+/** Returns only role/status values that currently exist in the company's user data. */
+usersRoutes.get("/filter-options", async (c) => {
+    const [roles, statuses, resignedCount] = await prisma.$transaction([
+        prisma.account.findMany({
+            distinct: ["role"],
+            select: { role: true },
+            orderBy: { role: "asc" },
+        }),
+        prisma.account.findMany({
+            distinct: ["status"],
+            select: { status: true },
+            orderBy: { status: "asc" },
+        }),
+        prisma.employmentRecord.count({
+            where: {
+                status: { equals: "Resigned", mode: "insensitive" },
+                dateLeft: { not: null },
+            },
+        }),
+    ]);
+    return c.json({
+        roles: roles.map((item) => item.role),
+        statuses: [
+            ...statuses.map((item) => item.status),
+            ...(resignedCount > 0 ? ["RESIGNED"] : []),
+        ],
     });
 });
 usersRoutes.get("/:id/schedule", async (c) => {

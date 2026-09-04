@@ -46,7 +46,7 @@ export const createSessionToken = (session: Omit<AuthSession, "tokenType">) =>
   issueToken(session, "access", "15m");
 
 export const createRefreshToken = (session: Omit<AuthSession, "tokenType">) =>
-  issueToken(session, "refresh", "30d");
+  issueToken(session, "refresh", "90d");
 
 export const getSession = (c: Context) => {
   const token = getCookie(c, sessionCookieName);

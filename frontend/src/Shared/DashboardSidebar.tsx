@@ -1,0 +1,291 @@
+"use client";
+/* eslint-disable @next/next/no-img-element -- Profile URLs are user-provided and may use an external image host. */
+
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  LogOut,
+  MapPin,
+  Menu,
+  Settings,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import {
+  authChangeEvent,
+  clearSignedInUser,
+  getSignedInUser,
+  type SignedInUser,
+} from "@/app/login/auth.session";
+import { logout } from "@/Services/auth";
+
+type SidebarLink = { label: string; href: string; icon: LucideIcon };
+
+const omLinks: SidebarLink[] = [
+  { label: "Sites", href: "/om/site", icon: MapPin },
+  { label: "Users", href: "/om/users", icon: Users },
+  { label: "Shift", href: "/om/shifts", icon: CalendarDays },
+  { label: "Attendance", href: "/om/attendance", icon: ClipboardCheck },
+];
+const officerLinks: SidebarLink[] = [
+  {
+    label: "Check In / Check Out",
+    href: "/officer/check-in",
+    icon: ClipboardCheck,
+  },
+];
+
+export function DashboardSidebar() {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [user, setUser] = useState<SignedInUser | null>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const update = () => setUser(getSignedInUser());
+    update();
+    window.addEventListener(authChangeEvent, update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener(authChangeEvent, update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+  useEffect(() => {
+    if (!accountOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!accountRef.current?.contains(event.target as Node))
+        setAccountOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [accountOpen]);
+
+  const isOfficer = user?.role === "OFFICER";
+  const links = isOfficer ? officerLinks : omLinks;
+  const homeHref = isOfficer ? "/officer/check-in" : "/om/site";
+  const profileHref = isOfficer ? null : "/om/profile";
+  const name = user?.fullName ?? "My Account";
+  const subtitle = user?.employeeId ?? "";
+  const role = user?.role ?? "";
+  const initial = name.charAt(0).toUpperCase() || "U";
+  const active = (href: string) => pathname === href;
+  const signOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    try {
+      await logout();
+    } catch {
+      // Clear the local UI session even when the server session is unavailable.
+    }
+    clearSignedInUser();
+    // A full navigation clears every in-memory TanStack Query session cache.
+    // This prevents a stale /session response from redirecting back to a dashboard.
+    window.location.replace("/");
+  };
+  const avatar = (
+    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-blue-600 text-sm font-semibold text-white">
+      {user?.profileImageUrl ? (
+        <img
+          src={user.profileImageUrl}
+          alt=""
+          className="size-full object-cover"
+        />
+      ) : (
+        initial
+      )}
+    </span>
+  );
+  const nav = (mobile = false) => (
+    <nav
+      className={`flex-1 space-y-1 overflow-y-auto p-3 ${mobile ? "pt-5" : ""}`}
+    >
+      {links.map(({ label, href, icon: Icon }) => (
+        <Link
+          key={href}
+          href={href}
+          title={!mobile && collapsed ? label : undefined}
+          onClick={() => {
+            setMobileOpen(false);
+            setAccountOpen(false);
+          }}
+          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition ${active(href) ? "bg-blue-50 font-semibold text-blue-600" : "text-slate-600 hover:bg-slate-100"}`}
+        >
+          <Icon className="size-4 shrink-0" />
+          {(mobile || !collapsed) && <span>{label}</span>}
+        </Link>
+      ))}
+    </nav>
+  );
+  const account = (mobile = false) => (
+    <div className="shrink-0 border-t border-slate-200 p-4">
+      {mobile ? (
+        <>
+          <div className="flex items-center gap-3">
+            {avatar}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900">
+                {name}
+                {role ? ` (${role})` : ""}
+              </p>
+              <p className="truncate text-xs text-slate-500">{subtitle}</p>
+            </div>
+          </div>
+          {profileHref && (
+            <Link
+              href={profileHref}
+              onClick={() => setMobileOpen(false)}
+              className="mt-3 flex items-center gap-2 rounded-md px-2 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <Settings className="size-4" />
+              Account Settings
+            </Link>
+          )}
+          <button
+            type="button"
+            disabled={isSigningOut}
+            onClick={() => void signOut()}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
+          >
+            <LogOut className="size-4" />
+            {isSigningOut ? "Logging out…" : "Logout"}
+          </button>
+        </>
+      ) : collapsed ? (
+        avatar
+      ) : (
+        <div ref={accountRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setAccountOpen((value) => !value)}
+            className="flex w-full items-center gap-3 rounded-lg text-left"
+          >
+            <>{avatar}</>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900">
+                {name}
+                {role ? ` (${role})` : ""}
+              </p>
+              <p className="truncate text-xs text-slate-500">{subtitle}</p>
+            </div>
+          </button>
+          {accountOpen && (
+            <div className="absolute bottom-12 left-0 z-50 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white py-2 shadow-xl">
+              <p className="border-b border-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
+                My Account
+              </p>
+              {profileHref && (
+                <Link
+                  href={profileHref}
+                  onClick={() => setAccountOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <Settings className="size-4" />
+                  Account Settings
+                </Link>
+              )}
+              <button
+                type="button"
+                disabled={isSigningOut}
+                onClick={() => void signOut()}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-wait disabled:opacity-60"
+              >
+                <LogOut className="size-4" />
+                {isSigningOut ? "Logging out…" : "Logout"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
+        <Link href={homeHref} className="flex items-center gap-2.5">
+          <span className="grid size-9 place-items-center rounded-lg bg-blue-600 text-white">
+            <ShieldCheck className="size-5" />
+          </span>
+          <span className="text-lg font-bold text-slate-800">Azovis</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="grid size-10 place-items-center rounded-lg text-slate-700 hover:bg-slate-100"
+          aria-label="Open navigation menu"
+        >
+          <Menu className="size-5" />
+        </button>
+      </header>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-slate-950/40"
+          />
+          <aside className="relative flex h-full w-[min(18rem,86vw)] flex-col bg-white shadow-2xl">
+            <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
+              <span className="flex items-center gap-2.5 text-lg font-bold text-slate-800">
+                <span className="grid size-9 place-items-center rounded-lg bg-blue-600 text-white">
+                  <ShieldCheck className="size-5" />
+                </span>
+                Azovis
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="grid size-9 place-items-center rounded-lg text-slate-600 hover:bg-slate-100"
+                aria-label="Close navigation menu"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            {nav(true)}
+            {account(true)}
+          </aside>
+        </div>
+      )}
+      <aside
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white transition-[width] duration-200 lg:flex ${collapsed ? "w-20" : "w-64"}`}
+      >
+        <div className="flex h-20 items-center border-b border-slate-200 px-4">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-600 text-white">
+            <ShieldCheck className="size-6" />
+          </span>
+          {!collapsed && (
+            <span className="ml-3 text-xl font-bold text-slate-800">
+              Azovis
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setCollapsed((value) => !value)}
+            className="ml-auto grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <ChevronRight className="size-5" />
+            ) : (
+              <ChevronLeft className="size-5" />
+            )}
+          </button>
+        </div>
+        {nav()}
+        {account()}
+      </aside>
+    </>
+  );
+}

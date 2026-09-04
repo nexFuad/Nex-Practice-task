@@ -1,0 +1,58 @@
+import { ShieldCheck } from "lucide-react";
+
+const footerLinks = {
+  Product: [
+    ["Platform", "#platform"],
+    ["How it works", "#how-it-works"],
+    ["Dashboard", "#dashboard"],
+  ],
+  Company: [
+    ["For facilities", "#facilities"],
+    ["Contact", "mailto:hello@guardly.com"],
+    ["Login", "/login"],
+  ],
+};
+
+export function Footer() {
+  return (
+    <footer className="bg-slate-950 px-5 py-14 text-slate-300 sm:px-8 lg:px-10">
+      <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
+        <div>
+          <div className="flex items-center gap-3 text-white">
+            <span className="grid size-9 place-items-center rounded-lg bg-blue-600">
+              <ShieldCheck className="size-5" />
+            </span>
+            <span className="text-lg font-bold">Guardly</span>
+          </div>
+          <p className="mt-5 max-w-xs text-sm leading-6 text-slate-400">
+            Intelligent security operations for teams that need total
+            visibility.
+          </p>
+        </div>
+        {Object.entries(footerLinks).map(([group, links]) => (
+          <div key={group}>
+            <h3 className="text-sm font-semibold text-white">{group}</h3>
+            <ul className="mt-4 space-y-3">
+              {links.map(([label, href]) => (
+                <li key={label}>
+                  <a
+                    className="text-sm text-slate-400 transition hover:text-white"
+                    href={href}
+                  >
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="mx-auto mt-12 flex max-w-6xl flex-col gap-3 border-t border-white/10 pt-6 text-sm text-slate-500 sm:flex-row sm:justify-between">
+        <p>© {new Date().getFullYear()} Guardly. All rights reserved.</p>
+        <a href="mailto:hello@guardly.com" className="hover:text-white">
+          hello@guardly.com
+        </a>
+      </div>
+    </footer>
+  );
+}

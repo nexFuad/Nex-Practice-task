@@ -2,7 +2,15 @@ import bcrypt from "bcryptjs";
 import { Hono } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import { prisma } from "../../lib/prisma.js";
-import { createRefreshToken, createSessionToken, getRefreshSession, getSession, normalizeRole, refreshCookieName, sessionCookieName } from "./auth.guard.js";
+import {
+  createRefreshToken,
+  createSessionToken,
+  getRefreshSession,
+  getSession,
+  normalizeRole,
+  refreshCookieName,
+  sessionCookieName,
+} from "./auth.guard.js";
 
 const authRoutes = new Hono();
 const accountWithProfile = {
@@ -15,13 +23,15 @@ const accountWithProfile = {
   fullName: true,
   email: true,
   profileImageUrl: true,
-  user: { select: { id: true, basic: { select: { fullName: true, email: true } } } },
+  user: {
+    select: { id: true, basic: { select: { fullName: true, email: true } } },
+  },
 } as const;
 const normalizedId = (employeeId: string) => employeeId.trim().toLowerCase();
 const isSupportedAccountRole = (role: string) =>
   ["ADMIN", "OM", "OFFICER"].includes(role.trim().toUpperCase());
 const dashboardFor = (role: string) =>
-  role === "OFFICER" ? "/officer/dashboard" : "/om/sites";
+  role === "OFFICER" ? "/officer/check-in" : "/om/site";
 const setAuthCookies = (
   c: Parameters<typeof setCookie>[0],
   session: {
@@ -33,19 +43,40 @@ const setAuthCookies = (
   rememberMe: boolean,
 ) => {
   const production = process.env.NODE_ENV === "production";
-  const shared = { httpOnly: true, sameSite: production ? "None" as const : "Lax" as const, secure: production };
-  setCookie(c, sessionCookieName, createSessionToken(session), { ...shared, path: "/", maxAge: 15 * 60 });
+  const shared = {
+    httpOnly: true,
+    sameSite: production ? ("None" as const) : ("Lax" as const),
+    secure: production,
+  };
+  setCookie(c, sessionCookieName, createSessionToken(session), {
+    ...shared,
+    path: "/",
+    maxAge: 15 * 60,
+  });
   if (rememberMe) {
     setCookie(c, refreshCookieName, createRefreshToken(session), {
       ...shared,
       path: "/api/auth/refresh",
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: 90 * 24 * 60 * 60,
     });
   } else {
     deleteCookie(c, refreshCookieName, { path: "/api/auth/refresh" });
   }
 };
-const profileResponse = (account: { id: string; employeeId: string; company: string; role: string; passwordChangedAt: Date; fullName: string; email: string | null; profileImageUrl: string | null; user: { id: string; basic: { fullName: string; email: string | null } | null } }) => ({
+const profileResponse = (account: {
+  id: string;
+  employeeId: string;
+  company: string;
+  role: string;
+  passwordChangedAt: Date;
+  fullName: string;
+  email: string | null;
+  profileImageUrl: string | null;
+  user: {
+    id: string;
+    basic: { fullName: string; email: string | null } | null;
+  };
+}) => ({
   id: account.id,
   employeeId: account.employeeId,
   fullName: account.fullName,
@@ -63,11 +94,34 @@ authRoutes.post("/login", async (c) => {
     password?: string;
     rememberMe?: boolean;
   }>();
-  if (!input.employeeId?.trim() || !input.company?.trim() || !input.password) return c.json({ message: "Employee ID, company and password are required." }, 400);
-  const account = await prisma.account.findUnique({ where: { employeeId: normalizedId(input.employeeId) }, select: { ...accountWithProfile, passwordHash: true } });
-  if (!account || account.company.toLowerCase() !== input.company.trim().toLowerCase() || !await bcrypt.compare(input.password, account.passwordHash)) return c.json({ message: "Invalid employee ID, company or password." }, 401);
-  if (account.status !== "ACTIVE") return c.json({ message: "Your account is not active. Contact an operations manager." }, 403);
-  if (!isSupportedAccountRole(account.role)) return c.json({ message: "This account does not have a supported application role." }, 403);
+  if (!input.employeeId?.trim() || !input.company?.trim() || !input.password)
+    return c.json(
+      { message: "Employee ID, company and password are required." },
+      400,
+    );
+  const account = await prisma.account.findUnique({
+    where: { employeeId: normalizedId(input.employeeId) },
+    select: { ...accountWithProfile, passwordHash: true },
+  });
+  if (
+    !account ||
+    account.company.toLowerCase() !== input.company.trim().toLowerCase() ||
+    !(await bcrypt.compare(input.password, account.passwordHash))
+  )
+    return c.json(
+      { message: "Invalid employee ID, company or password." },
+      401,
+    );
+  if (account.status !== "ACTIVE")
+    return c.json(
+      { message: "Your account is not active. Contact an operations manager." },
+      403,
+    );
+  if (!isSupportedAccountRole(account.role))
+    return c.json(
+      { message: "This account does not have a supported application role." },
+      403,
+    );
   const role = normalizeRole(account.role);
   const dashboardPath = dashboardFor(role);
   setAuthCookies(
@@ -86,9 +140,20 @@ authRoutes.post("/login", async (c) => {
 
 authRoutes.post("/refresh", async (c) => {
   const refreshSession = getRefreshSession(c);
-  if (!refreshSession) return c.json({ message: "Your session has expired. Please sign in again." }, 401);
-  const account = await prisma.account.findUnique({ where: { id: refreshSession.accountId }, select: accountWithProfile });
-  if (!account || account.status !== "ACTIVE") return c.json({ message: "Your account is unavailable. Please sign in again." }, 401);
+  if (!refreshSession)
+    return c.json(
+      { message: "Your session has expired. Please sign in again." },
+      401,
+    );
+  const account = await prisma.account.findUnique({
+    where: { id: refreshSession.accountId },
+    select: accountWithProfile,
+  });
+  if (!account || account.status !== "ACTIVE")
+    return c.json(
+      { message: "Your account is unavailable. Please sign in again." },
+      401,
+    );
   const role = normalizeRole(account.role);
   setAuthCookies(
     c,
@@ -100,54 +165,145 @@ authRoutes.post("/refresh", async (c) => {
     },
     true,
   );
-  return c.json({ user: profileResponse(account), dashboardPath: dashboardFor(role) });
+  return c.json({
+    user: profileResponse(account),
+    dashboardPath: dashboardFor(role),
+  });
 });
 
 authRoutes.get("/session", async (c) => {
   const session = getSession(c);
   if (!session) return c.json({ message: "No active session." }, 401);
-  const account = await prisma.account.findUnique({ where: { id: session.accountId }, select: accountWithProfile });
-  if (!account) return c.json({ message: "Session account no longer exists." }, 401);
-  return c.json({ user: profileResponse(account), dashboardPath: dashboardFor(session.role) });
+  const account = await prisma.account.findUnique({
+    where: { id: session.accountId },
+    select: accountWithProfile,
+  });
+  if (!account)
+    return c.json({ message: "Session account no longer exists." }, 401);
+  return c.json({
+    user: profileResponse(account),
+    dashboardPath: dashboardFor(session.role),
+  });
 });
 
-authRoutes.post("/logout", (c) => { deleteCookie(c, sessionCookieName, { path: "/" }); deleteCookie(c, refreshCookieName, { path: "/api/auth/refresh" }); deleteCookie(c, "guardly_session", { path: "/" }); return c.json({ message: "Logged out." }); });
+authRoutes.post("/logout", (c) => {
+  deleteCookie(c, sessionCookieName, { path: "/" });
+  deleteCookie(c, refreshCookieName, { path: "/api/auth/refresh" });
+  deleteCookie(c, "guardly_session", { path: "/" });
+  return c.json({ message: "Logged out." });
+});
 
 authRoutes.get("/profile/:employeeId", async (c) => {
   const session = getSession(c);
   if (!session) return c.json({ message: "Authentication required." }, 401);
-  if (session.employeeId !== normalizedId(c.req.param("employeeId")) && session.role !== "ADMIN" && session.role !== "OM") return c.json({ message: "Access denied." }, 403);
-  const account = await prisma.account.findUnique({ where: { employeeId: normalizedId(c.req.param("employeeId")) }, select: accountWithProfile });
-  return account ? c.json(profileResponse(account)) : c.json({ message: "Profile not found." }, 404);
+  if (
+    session.employeeId !== normalizedId(c.req.param("employeeId")) &&
+    session.role !== "ADMIN" &&
+    session.role !== "OM"
+  )
+    return c.json({ message: "Access denied." }, 403);
+  const account = await prisma.account.findUnique({
+    where: { employeeId: normalizedId(c.req.param("employeeId")) },
+    select: accountWithProfile,
+  });
+  return account
+    ? c.json(profileResponse(account))
+    : c.json({ message: "Profile not found." }, 404);
 });
 
 authRoutes.patch("/profile/:employeeId", async (c) => {
   const session = getSession(c);
   if (!session) return c.json({ message: "Authentication required." }, 401);
-  if (session.employeeId !== normalizedId(c.req.param("employeeId")) && session.role !== "ADMIN" && session.role !== "OM") return c.json({ message: "Access denied." }, 403);
-  const input = await c.req.json<{ fullName?: string; profileImageUrl?: string | null }>();
-  if (!input.fullName?.trim()) return c.json({ message: "Full name is required." }, 400);
+  if (
+    session.employeeId !== normalizedId(c.req.param("employeeId")) &&
+    session.role !== "ADMIN" &&
+    session.role !== "OM"
+  )
+    return c.json({ message: "Access denied." }, 403);
+  const input = await c.req.json<{
+    fullName?: string;
+    profileImageUrl?: string | null;
+  }>();
+  if (!input.fullName?.trim())
+    return c.json({ message: "Full name is required." }, 400);
   const employeeId = normalizedId(c.req.param("employeeId"));
-  const existing = await prisma.account.findUnique({ where: { employeeId }, select: { id: true, userId: true } });
+  const existing = await prisma.account.findUnique({
+    where: { employeeId },
+    select: { id: true, userId: true },
+  });
   if (!existing) return c.json({ message: "Profile not found." }, 404);
-  const account = await prisma.account.update({ where: { id: existing.id }, data: {
-    fullName: input.fullName.trim(), profileImageUrl: input.profileImageUrl?.trim() || null,
-  }, select: accountWithProfile });
-  await prisma.user.update({ where: { id: existing.userId }, data: { fullName: input.fullName.trim(), profileImageUrl: input.profileImageUrl?.trim() || null, basic: { upsert: { create: { fullName: input.fullName.trim() }, update: { fullName: input.fullName.trim() } } }, profile: { upsert: { create: { profileImageUrl: input.profileImageUrl?.trim() || null }, update: { profileImageUrl: input.profileImageUrl?.trim() || null } } } } });
+  const account = await prisma.account.update({
+    where: { id: existing.id },
+    data: {
+      fullName: input.fullName.trim(),
+      profileImageUrl: input.profileImageUrl?.trim() || null,
+    },
+    select: accountWithProfile,
+  });
+  await prisma.user.update({
+    where: { id: existing.userId },
+    data: {
+      fullName: input.fullName.trim(),
+      profileImageUrl: input.profileImageUrl?.trim() || null,
+      basic: {
+        upsert: {
+          create: { fullName: input.fullName.trim() },
+          update: { fullName: input.fullName.trim() },
+        },
+      },
+      profile: {
+        upsert: {
+          create: { profileImageUrl: input.profileImageUrl?.trim() || null },
+          update: { profileImageUrl: input.profileImageUrl?.trim() || null },
+        },
+      },
+    },
+  });
   return c.json(profileResponse(account));
 });
 
 authRoutes.patch("/profile/:employeeId/password", async (c) => {
   const session = getSession(c);
-  if (!session || session.employeeId !== normalizedId(c.req.param("employeeId"))) return c.json({ message: "Access denied." }, 403);
-  const input = await c.req.json<{ currentPassword?: string; newPassword?: string; confirmPassword?: string }>();
-  if (!input.currentPassword || !input.newPassword || !input.confirmPassword) return c.json({ message: "Complete all password fields." }, 400);
-  if (input.newPassword.length < 6) return c.json({ message: "New password must have at least 6 characters." }, 400);
-  if (input.newPassword !== input.confirmPassword) return c.json({ message: "New password and confirmation do not match." }, 400);
+  if (
+    !session ||
+    session.employeeId !== normalizedId(c.req.param("employeeId"))
+  )
+    return c.json({ message: "Access denied." }, 403);
+  const input = await c.req.json<{
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>();
+  if (!input.currentPassword || !input.newPassword || !input.confirmPassword)
+    return c.json({ message: "Complete all password fields." }, 400);
+  if (input.newPassword.length < 6)
+    return c.json(
+      { message: "New password must have at least 6 characters." },
+      400,
+    );
+  if (input.newPassword !== input.confirmPassword)
+    return c.json(
+      { message: "New password and confirmation do not match." },
+      400,
+    );
   const employeeId = normalizedId(c.req.param("employeeId"));
-  const account = await prisma.account.findUnique({ where: { employeeId }, select: { passwordHash: true } });
-  if (!account || !await bcrypt.compare(input.currentPassword, account.passwordHash)) return c.json({ message: "Current password is incorrect." }, 400);
-  const updated = await prisma.account.update({ where: { employeeId }, data: { passwordHash: await bcrypt.hash(input.newPassword, 10), passwordChangedAt: new Date() }, select: accountWithProfile });
+  const account = await prisma.account.findUnique({
+    where: { employeeId },
+    select: { passwordHash: true },
+  });
+  if (
+    !account ||
+    !(await bcrypt.compare(input.currentPassword, account.passwordHash))
+  )
+    return c.json({ message: "Current password is incorrect." }, 400);
+  const updated = await prisma.account.update({
+    where: { employeeId },
+    data: {
+      passwordHash: await bcrypt.hash(input.newPassword, 10),
+      passwordChangedAt: new Date(),
+    },
+    select: accountWithProfile,
+  });
   return c.json(profileResponse(updated));
 });
 export { authRoutes };
