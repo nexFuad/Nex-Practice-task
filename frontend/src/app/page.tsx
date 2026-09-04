@@ -1,5 +1,10 @@
-import { PublicLandingContainer } from "@/components/public/PublicLandingContainer";
+import { LandingPage } from "./public/landingpage";
+import { SessionRedirect } from "./SessionRedirect";
 
 export default function Home() {
-  return <PublicLandingContainer />;
+  return (
+    <SessionRedirect>
+      <LandingPage />
+    </SessionRedirect>
+  );
 }

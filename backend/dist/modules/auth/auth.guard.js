@@ -18,7 +18,7 @@ export const normalizeRole = (role) => {
 };
 const issueToken = (session, tokenType, expiresIn) => jwt.sign({ ...session, tokenType }, secret, { expiresIn });
 export const createSessionToken = (session) => issueToken(session, "access", "15m");
-export const createRefreshToken = (session) => issueToken(session, "refresh", "30d");
+export const createRefreshToken = (session) => issueToken(session, "refresh", "90d");
 export const getSession = (c) => {
     const token = getCookie(c, sessionCookieName);
     if (!token)
