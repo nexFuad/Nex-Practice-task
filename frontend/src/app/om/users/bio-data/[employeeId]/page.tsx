@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   downloadOfficerParticularsPdf,
   type OfficerParticularsPdfSection,
-} from "../../officerParticularsPdf";
+} from "@/lib/officerParticularsPdf";
 import { getUser, type EditableEmployee } from "@/Services/user";
 
 type Employment = {

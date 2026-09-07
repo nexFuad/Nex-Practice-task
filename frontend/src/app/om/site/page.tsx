@@ -12,11 +12,15 @@ import {
   ToggleRight,
   Trash2,
 } from "lucide-react";
-import { SiteDetailsModal } from "./SiteDetailsModal";
-import { SiteFormModal } from "./SiteFormModal";
-import { SiteStats } from "./SiteStats";
-import { Toast } from "./Toast";
-import { Table, type TableAction, type TableColumn } from "@/Shared/Table";
+import { SiteDetailsModal } from "../../../components/OM/Site/SiteDetailsModal";
+import { SiteFormModal } from "../../../components/OM/Site/SiteFormModal";
+import { SiteStats } from "../../../components/OM/Site/SiteStats";
+import { Toast } from "../../../components/OM/Site/Toast";
+import {
+  Table,
+  type TableAction,
+  type TableColumn,
+} from "@/components/Shared/Table";
 import {
   createSite,
   deleteSite,

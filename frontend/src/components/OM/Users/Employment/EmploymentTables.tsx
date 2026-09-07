@@ -27,7 +27,7 @@ export function EmploymentTable({
   ];
   return (
     <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200">
-      <table className="min-w-[980px] w-full text-left text-xs">
+      <table className="min-w-245 w-full text-left text-xs">
         <thead className="bg-slate-50">
           <tr>
             {headers.map((header) => (
@@ -89,7 +89,7 @@ export function PwmHistoryTable({
 }) {
   return (
     <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200">
-      <table className="min-w-[540px] w-full text-left text-sm">
+      <table className="min-w-135 w-full text-left text-sm">
         <thead className="bg-slate-50">
           <tr>
             <th className="px-4 py-3">Role</th>

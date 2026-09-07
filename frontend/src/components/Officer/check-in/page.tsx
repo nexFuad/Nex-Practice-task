@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadImage } from "@/Services/upload";
 import { useSearchBar } from "@/Hooks/useSearchBar";
-import { Table, type TableColumn } from "@/Shared/Table";
+import { Table, type TableColumn } from "@/components/Shared/Table";
 import {
   activeAttendance,
   attendanceHistory,

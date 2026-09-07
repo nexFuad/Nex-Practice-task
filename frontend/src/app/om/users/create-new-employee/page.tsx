@@ -1,12 +1,19 @@
 "use client";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  BriefcaseBusiness,
+  ContactRound,
+  WalletCards,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BasicEmployeeForm } from "../employee/BasicEmployeeForm";
-import { EmployeeTabs } from "../employee/EmployeeTabs";
+import { BasicEmployeeForm } from "@/components/OM/Users/BasicEmployeeForm";
 import { useState } from "react";
-import { EmploymentRecords } from "../employee/employment/EmploymentRecords";
-import { PayrollForm } from "../employee/PayrollForm";
-import type { EmployeeTab } from "../employee/EmployeeTabs";
+import { EmploymentRecords } from "@/components/OM/Users/Employment/EmploymentRecords";
+import { PayrollForm } from "@/components/OM/Users/PayrollForm";
+import { tabs } from "@/components/OM/Users/constants";
+
+type EmployeeTab = "Basic" | "Employment" | "Payroll";
+const employeeTabIcons = [ContactRound, BriefcaseBusiness, WalletCards];
 
 export default function CreateNewEmployeePage() {
   const router = useRouter();
@@ -54,7 +61,23 @@ export default function CreateNewEmployeePage() {
         </button>
       </header>
       <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <EmployeeTabs activeTab={activeTab} onChange={changeTab} />
+        <nav className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:grid-cols-3">
+          {tabs.map((tab, index) => {
+            const current = tab as EmployeeTab;
+            const Icon = employeeTabIcons[index];
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => changeTab(current)}
+                className={`flex h-10 items-center justify-center gap-2 rounded-md text-xs font-semibold uppercase tracking-wide ${activeTab === current ? "bg-neutral-950 text-white shadow" : "text-slate-600 hover:bg-white"}`}
+              >
+                <Icon className="size-4" />
+                {tab}
+              </button>
+            );
+          })}
+        </nav>
         <h2 className="mt-7 text-lg font-semibold text-blue-800">{heading}</h2>
         <div className="mt-5">
           {activeTab === "Basic" && <BasicEmployeeForm onSaved={basicSaved} />}

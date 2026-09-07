@@ -1,18 +1,26 @@
 "use client";
 
-import { ArrowLeft, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  BriefcaseBusiness,
+  ContactRound,
+  Save,
+  WalletCards,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BasicEmployeeForm } from "../../employee/BasicEmployeeForm";
-import { EmployeeTabs, type EmployeeTab } from "../../employee/EmployeeTabs";
-import { Toast } from "../../../site/Toast";
-import { EmploymentRecords } from "../../employee/employment/EmploymentRecords";
-import { PayrollForm } from "../../employee/PayrollForm";
+import { BasicEmployeeForm } from "@/components/OM/Users/BasicEmployeeForm";
+import { Toast } from "@/components/OM/Site/Toast";
+import { EmploymentRecords } from "@/components/OM/Users/Employment/EmploymentRecords";
+import { PayrollForm } from "@/components/OM/Users/PayrollForm";
 import { getUser, type EditableEmployee } from "@/Services/user";
 import type { EmployeeFormValues } from "@/Types/employeeTypes";
+import { tabs } from "@/components/OM/Users/constants";
 
 const formId = "edit-employee-form";
+type EmployeeTab = "Basic" | "Employment" | "Payroll";
+const employeeTabIcons = [ContactRound, BriefcaseBusiness, WalletCards];
 
 export default function EditEmployeeRoute() {
   const router = useRouter();
@@ -98,7 +106,23 @@ export default function EditEmployeeRoute() {
       </header>
 
       <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <EmployeeTabs activeTab={activeTab} onChange={setActiveTab} />
+        <nav className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 sm:grid-cols-3">
+          {tabs.map((tab, index) => {
+            const current = tab as EmployeeTab;
+            const Icon = employeeTabIcons[index];
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(current)}
+                className={`flex h-10 items-center justify-center gap-2 rounded-md text-xs font-semibold uppercase tracking-wide ${activeTab === current ? "bg-neutral-950 text-white shadow" : "text-slate-600 hover:bg-white"}`}
+              >
+                <Icon className="size-4" />
+                {tab}
+              </button>
+            );
+          })}
+        </nav>
         <h2 className="mt-7 text-lg font-semibold text-blue-800">
           {heading[activeTab]}
         </h2>

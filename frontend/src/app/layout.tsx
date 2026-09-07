@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { QueryProvider } from "./QueryProvider";
+import { QueryProvider } from "@/providers/page";
 
 export const metadata: Metadata = {
   title: "Guardly | Intelligent Security Operations",

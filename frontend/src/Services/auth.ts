@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { SignedInUser } from "@/app/login/auth.session";
+import type { SignedInUser } from "@/lib/auth.session";
 
 export type LoginPayload = {
   employeeId: string;

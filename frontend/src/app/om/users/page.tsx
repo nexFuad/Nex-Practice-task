@@ -2,26 +2,30 @@
 
 import { useMemo, useState } from "react";
 import {
+  Activity,
   Ban,
   Eye,
   FileText,
+  LoaderCircle,
   Mail,
   MapPin,
   Pencil,
   Phone,
   Plus,
+  Search,
+  ShieldCheck,
   Trash2,
   UserMinus,
   UserPlus,
+  UserCheck,
   UserRoundCheck,
+  Users,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Toast } from "../site/Toast";
-import { UserActionDialog } from "./UserActionDialog";
-import type { UserMenuAction } from "./UserActionsMenu";
-import { UsersFilters } from "./UsersFilters";
-import { UserStats } from "./UserStats";
+import { Toast } from "../../../components/OM/Site/Toast";
+import { UserActionDialog } from "../../../components/OM/Users/UserActionDialog";
+import type { UserMenuAction } from "../../../components/OM/Users/UserActionsMenu";
 import {
   deleteUser,
   getUserFilterOptions,
@@ -30,9 +34,25 @@ import {
 } from "@/Services/user";
 import type { DemoUser } from "@/Types/userTypes";
 import { useSearchBar } from "@/Hooks/useSearchBar";
-import { Table, type TableAction, type TableColumn } from "@/Shared/Table";
+import {
+  Table,
+  type TableAction,
+  type TableColumn,
+} from "@/components/Shared/Table";
 
 const PAGE_SIZE = 10;
+const userStatCards = [
+  ["Total Users", "All registered users", Users, "text-blue-600", ""],
+  [
+    "Active Officers",
+    "Currently active",
+    ShieldCheck,
+    "text-emerald-600",
+    "↑ 12%",
+  ],
+  ["Operations Managers", "OM accounts", UserCheck, "text-slate-600", ""],
+  ["On Duty Now", "Currently working", Activity, "text-amber-500", ""],
+] as const;
 
 export default function UsersPage() {
   const router = useRouter();
@@ -80,6 +100,12 @@ export default function UsersPage() {
     Math.ceil((usersQuery.data?.total ?? 0) / PAGE_SIZE),
   );
   const safePage = Math.min(page, totalPages);
+  const userStatValues = [
+    usersQuery.data?.stats.total ?? 0,
+    usersQuery.data?.stats.activeOfficers ?? 0,
+    usersQuery.data?.stats.operationManagers ?? 0,
+    1,
+  ];
 
   const updateFilters = (update: () => void) => {
     update();
@@ -196,7 +222,7 @@ export default function UsersPage() {
       icon: Pencil,
       onClick: (user) =>
         router.push(
-          `/om/users/edit-employee/${encodeURIComponent(user.databaseId)}`,
+          `/om/users/${encodeURIComponent(user.databaseId)}`,
         ),
     },
     {
@@ -268,23 +294,101 @@ export default function UsersPage() {
           </button>
         </header>
 
-        <UserStats
-          total={usersQuery.data?.stats.total ?? 0}
-          activeOfficers={usersQuery.data?.stats.activeOfficers ?? 0}
-          operationManagers={usersQuery.data?.stats.operationManagers ?? 0}
-        />
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {userStatCards.map(
+            ([title, caption, Icon, iconClass, trend], index) => (
+              <article
+                key={title}
+                className="flex h-full flex-col gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-lg 2xl:p-6"
+              >
+                <div className="flex h-full items-start justify-between">
+                  <div className="flex flex-1 flex-col">
+                    <p className="text-sm font-medium text-slate-600">{title}</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">
+                      {userStatValues[index]}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">{caption}</p>
+                    <div className="mt-2 h-5">
+                      {trend && (
+                        <p className="text-sm text-emerald-600">
+                          {trend}{" "}
+                          <span className="ml-2 text-slate-500">
+                            from last week
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className={`grid size-12 place-items-center rounded-lg bg-blue-100 ${iconClass}`}
+                  >
+                    <Icon className="size-6" />
+                  </span>
+                </div>
+              </article>
+            ),
+          )}
+        </section>
 
-        <UsersFilters
-          query={query}
-          role={role}
-          status={status}
-          roles={filterOptionsQuery.data?.roles ?? []}
-          statuses={filterOptionsQuery.data?.statuses ?? []}
-          optionsLoading={filterOptionsQuery.isLoading}
-          onQueryChange={(value) => updateFilters(() => setQuery(value))}
-          onRoleChange={(value) => updateFilters(() => setRole(value))}
-          onStatusChange={(value) => updateFilters(() => setStatus(value))}
-        />
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <label className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={query}
+                onChange={(event) =>
+                  updateFilters(() => setQuery(event.target.value))
+                }
+                placeholder="Search users by name, or ID..."
+                className="h-10 w-full rounded-md border border-slate-200 bg-white py-1 pl-10 pr-3 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3 sm:contents">
+              <select
+                value={role}
+                disabled={filterOptionsQuery.isLoading}
+                onChange={(event) =>
+                  updateFilters(() => setRole(event.target.value))
+                }
+                className="h-10 min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm outline-none disabled:cursor-wait disabled:bg-slate-50 sm:w-37.5"
+              >
+                <option value="ALL">
+                  {filterOptionsQuery.isLoading ? "Loading roles…" : "All Roles"}
+                </option>
+                {(filterOptionsQuery.data?.roles ?? []).map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={status}
+                disabled={filterOptionsQuery.isLoading}
+                onChange={(event) =>
+                  updateFilters(() => setStatus(event.target.value))
+                }
+                className="h-10 min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm outline-none disabled:cursor-wait disabled:bg-slate-50 sm:w-37.5"
+              >
+                <option value="ALL">
+                  {filterOptionsQuery.isLoading
+                    ? "Loading status…"
+                    : "All Status"}
+                </option>
+                {(filterOptionsQuery.data?.statuses ?? []).map((item) => (
+                  <option key={item} value={item}>
+                    {item.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </select>
+              {filterOptionsQuery.isLoading && (
+                <LoaderCircle
+                  className="size-4 animate-spin self-center text-slate-400"
+                  aria-label="Loading filter options"
+                />
+              )}
+            </div>
+          </div>
+        </section>
         <Table
           columns={columns}
           rows={users}

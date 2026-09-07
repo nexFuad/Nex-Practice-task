@@ -23,7 +23,7 @@ import {
   getSignedInUser,
   markExplicitLogout,
   type SignedInUser,
-} from "@/app/login/auth.session";
+} from "@/lib/auth.session";
 import { logout } from "@/Services/auth";
 
 type SidebarLink = { label: string; href: string; icon: LucideIcon };
@@ -37,7 +37,7 @@ const omLinks: SidebarLink[] = [
 const officerLinks: SidebarLink[] = [
   {
     label: "Check In / Check Out",
-    href: "/officer/check-in",
+    href: "/officer",
     icon: ClipboardCheck,
   },
 ];
@@ -73,7 +73,7 @@ export function DashboardSidebar() {
 
   const isOfficer = user?.role === "OFFICER";
   const links = isOfficer ? officerLinks : omLinks;
-  const homeHref = isOfficer ? "/officer/check-in" : "/om/site";
+  const homeHref = isOfficer ? "/officer" : "/om/site";
   const profileHref = isOfficer ? null : "/om/profile";
   const name = user?.fullName ?? "My Account";
   const subtitle = user?.employeeId ?? "";

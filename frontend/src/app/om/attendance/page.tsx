@@ -21,15 +21,19 @@ import {
   updateAttendance,
 } from "@/Services/attendance";
 import { getShiftOptions } from "@/Services/shift";
-import { AttendanceFormModal } from "./AttendanceFormModal";
-import { AttendanceStats } from "./AttendanceStats";
-import { AttendanceToolbar } from "./AttendanceToolbar";
+import { AttendanceFormModal } from "../../../components/OM/Attendance/AttendanceFormModal";
+import { AttendanceStats } from "../../../components/OM/Attendance/AttendanceStats";
+import { AttendanceToolbar } from "../../../components/OM/Attendance/AttendanceToolbar";
 import type {
   AttendanceFormValues,
   AttendanceRecord,
 } from "@/Types/attendanceTypes";
 import { useSearchBar } from "@/Hooks/useSearchBar";
-import { Table, type TableAction, type TableColumn } from "@/Shared/Table";
+import {
+  Table,
+  type TableAction,
+  type TableColumn,
+} from "@/components/Shared/Table";
 
 const PAGE_SIZE = 10;
 const monthKey = (date: Date) =>

@@ -10,9 +10,13 @@ import {
   updateShift,
   type PaginatedShifts,
 } from "@/Services/shift";
-import { ShiftFormModal } from "./ShiftFormModal";
-import { ShiftStats } from "./ShiftStats";
-import { Table, type TableAction, type TableColumn } from "@/Shared/Table";
+import { ShiftFormModal } from "../../../components/OM/Shift/ShiftFormModal";
+import { ShiftStats } from "../../../components/OM/Shift/ShiftStats";
+import {
+  Table,
+  type TableAction,
+  type TableColumn,
+} from "@/components/Shared/Table";
 import type { Shift, ShiftPayload } from "@/Types/shiftTypes";
 import { useSearchBar } from "@/Hooks/useSearchBar";
 

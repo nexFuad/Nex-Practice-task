@@ -10,9 +10,9 @@ import {
   getSignedInUser,
   setSignedInUser,
   type SignedInUser,
-} from "@/app/login/auth.session";
-import { ChangePasswordModal } from "./ChangePasswordModal";
-import { ProfilePhotoCard } from "./ProfilePhotoCard";
+} from "@/lib/auth.session";
+import { ChangePasswordModal } from "../../../components/Profile/ChangePasswordModal";
+import { ProfilePhotoCard } from "../../../components/Profile/ProfilePhotoCard";
 
 const uploadPhoto = uploadImage;
 const relativePasswordDate = (value: string) => {
@@ -123,7 +123,7 @@ export default function ProfilePage() {
   return (
     <section className="min-h-screen p-5 sm:p-8">
       <Link
-        href="/om/dashboard"
+        href="/om/site"
         className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
       >
         <ArrowLeft className="size-5" />
