@@ -34,6 +34,7 @@ import {
 } from "@/Services/user";
 import type { DemoUser } from "@/Types/userTypes";
 import { useSearchBar } from "@/Hooks/useSearchBar";
+import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 import {
   Table,
   type TableAction,
@@ -389,6 +390,14 @@ export default function UsersPage() {
             </div>
           </div>
         </section>
+        {usersQuery.error && !usersQuery.data ? (
+          <ErrorDisplay
+            kind="unexpected"
+            variant="inline"
+            error={usersQuery.error}
+            onRetry={() => void usersQuery.refetch()}
+          />
+        ) : (
         <Table
           columns={columns}
           rows={users}
@@ -401,6 +410,7 @@ export default function UsersPage() {
           onPageChange={changePage}
           emptyMessage="No users found."
         />
+        )}
       </div>
 
       {activeAction && (

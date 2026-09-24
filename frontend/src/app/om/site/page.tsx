@@ -32,6 +32,7 @@ import {
 } from "@/Services/site";
 import type { Site } from "@/Types/siteTypes";
 import { useSearchBar } from "@/Hooks/useSearchBar";
+import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 
 const asNumberOrNull = (value: FormDataEntryValue | null) => {
   if (typeof value !== "string" || value.trim() === "") return null;
@@ -54,6 +55,7 @@ export default function SitePage() {
     isLoading,
     isFetching,
     error: sitesError,
+    refetch,
   } = useQuery<PaginatedSites>({
     queryKey: ["sites", { query: debouncedQuery, status, page, pageSize: 10 }],
     queryFn: () =>
@@ -281,15 +283,12 @@ export default function SitePage() {
           </div>
         </section>
         <div className="flex flex-1 flex-col space-y-4">
-          {(error || sitesError) && (
+          {error && (
             <p
               role="alert"
               className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
             >
-              {error ||
-                (sitesError instanceof Error
-                  ? sitesError.message
-                  : "Unable to load sites.")}
+              {error}
             </p>
           )}
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
@@ -307,7 +306,10 @@ export default function SitePage() {
             </label>
           </div>
         </div>
-        <Table
+        {sitesError && !data ? (
+          <ErrorDisplay kind="unexpected" variant="inline" error={sitesError} onRetry={() => void refetch()} />
+        ) : (
+          <Table
           columns={columns}
           rows={sites}
           getRowId={(site) => site.id}
@@ -318,7 +320,8 @@ export default function SitePage() {
           totalItems={data?.total ?? 0}
           onPageChange={setPage}
           emptyMessage="No sites found."
-        />
+          />
+        )}
       </div>
       {formSite && (
         <SiteFormModal

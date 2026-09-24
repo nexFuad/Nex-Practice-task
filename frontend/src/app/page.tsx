@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { useEffect, useSyncExternalStore } from "react";
 import { getSession } from "@/Services/auth";
 import { Loading } from "@/components/Shared/Loading";
@@ -14,7 +13,6 @@ import {
 import { LandingPage } from "./public/page";
 
 export default function Home() {
-  const router = useRouter();
   const isMounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -32,11 +30,11 @@ export default function Home() {
     if (explicitlyLoggedOut) return;
     if (data) {
       setSignedInUser(data.user);
-      router.replace(data.dashboardPath);
+      window.location.replace(data.dashboardPath);
       return;
     }
     if (isError && hasStoredUser) clearSignedInUser();
-  }, [data, explicitlyLoggedOut, hasStoredUser, isError, router]);
+  }, [data, explicitlyLoggedOut, hasStoredUser, isError]);
 
   if (!isMounted || (!explicitlyLoggedOut && (isLoading || data))) {
     return <Loading />;

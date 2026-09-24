@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadImage } from "@/Services/upload";
 import { useSearchBar } from "@/Hooks/useSearchBar";
 import { Table, type TableColumn } from "@/components/Shared/Table";
+import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 import {
   activeAttendance,
   attendanceHistory,
@@ -147,13 +148,17 @@ export default function OfficerCheckInRoute() {
           {toast}
         </p>
       )}
-      <DailyDutyCard
+      {activeQuery.error && !activeQuery.data ? (
+        <ErrorDisplay kind="unexpected" variant="inline" error={activeQuery.error} onRetry={() => void activeQuery.refetch()} />
+      ) : <DailyDutyCard
         record={todayRecord}
         active={active}
         loading={activeQuery.isLoading}
         onAction={() => setMode(active ? "out" : "in")}
-      />
-      <History
+      />}
+      {historyQuery.error && !historyQuery.data ? (
+        <ErrorDisplay kind="unexpected" variant="inline" error={historyQuery.error} onRetry={() => void historyQuery.refetch()} />
+      ) : <History
         records={records}
         total={total}
         page={page}
@@ -166,7 +171,10 @@ export default function OfficerCheckInRoute() {
         setDate={setDate}
         onPreview={setPhotoPreview}
         loading={historyQuery.isLoading}
-      />
+      />}
+      {optionsQuery.error && !optionsQuery.data && (
+        <ErrorDisplay kind="unexpected" variant="inline" error={optionsQuery.error} onRetry={() => void optionsQuery.refetch()} />
+      )}
       {mode && (
         <AttendanceModal
           mode={mode}

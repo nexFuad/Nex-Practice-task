@@ -29,6 +29,7 @@ import type {
   AttendanceRecord,
 } from "@/Types/attendanceTypes";
 import { useSearchBar } from "@/Hooks/useSearchBar";
+import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 import {
   Table,
   type TableAction,
@@ -70,12 +71,14 @@ function AttendancePhoto({
   url: string | null;
   label: string;
 }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   return (
     <div className="flex flex-col items-center gap-1">
-      {url ? (
+      {url && url !== failedUrl ? (
         <img
           src={url}
           alt={`${label} attendance`}
+          onError={() => setFailedUrl(url)}
           className="size-12 rounded-md border border-slate-200 object-cover"
         />
       ) : (
@@ -157,12 +160,6 @@ export default function AttendancePage() {
   const result = attendanceQuery.data;
   const records = result?.records ?? [];
   const stats = result?.stats ?? { total: 0, onDuty: 0, completed: 0 };
-  const loadError =
-    attendanceQuery.error instanceof Error
-      ? attendanceQuery.error.message
-      : attendanceQuery.error
-        ? "Unable to load attendance."
-        : "";
   const optionError =
     employeesQuery.error ||
     activeEmployeesQuery.error ||
@@ -444,14 +441,17 @@ export default function AttendancePage() {
               onAdd={() => setEditing("new")}
               onExport={exportRows}
             />
-            {(mutationError || loadError || optionError) && (
+            {(mutationError || optionError) && (
               <p
                 role="alert"
                 className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
               >
-                {mutationError || loadError || optionError}
+                {mutationError || optionError}
               </p>
             )}
+            {attendanceQuery.error && !result ? (
+              <ErrorDisplay kind="unexpected" variant="inline" error={attendanceQuery.error} onRetry={() => void attendanceQuery.refetch()} />
+            ) : (
             <Table
               columns={columns}
               rows={records}
@@ -464,6 +464,7 @@ export default function AttendancePage() {
               onPageChange={setPage}
               emptyMessage="No attendance records found for this month."
             />
+            )}
           </section>
         </div>
       </div>

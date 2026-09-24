@@ -1,3 +1,5 @@
+import { clearSignedInUser } from "@/lib/auth.session";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 const isAuthPath = (path: string) =>
@@ -33,6 +35,16 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}) {
       });
   }
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      !path.includes("/api/auth/") &&
+      typeof window !== "undefined" &&
+      window.location.pathname !== "/login"
+    ) {
+      clearSignedInUser();
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.replace(`/login?next=${next}`);
+    }
     const body = await response.json().catch(() => null);
     throw new Error(body?.message ?? "Unable to complete the request.");
   }

@@ -19,6 +19,7 @@ import {
 } from "@/components/Shared/Table";
 import type { Shift, ShiftPayload } from "@/Types/shiftTypes";
 import { useSearchBar } from "@/Hooks/useSearchBar";
+import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 
 const PAGE_SIZE = 10;
 
@@ -35,6 +36,7 @@ export default function ShiftsPage() {
     isLoading: loading,
     isFetching,
     error: queryError,
+    refetch,
   } = useQuery<PaginatedShifts>({
     queryKey: [
       "shifts",
@@ -69,13 +71,7 @@ export default function ShiftsPage() {
     data?.stats.inactive ?? 0,
     data?.stats.assignedSites ?? 0,
   ];
-  const visibleError =
-    error ||
-    (queryError instanceof Error
-      ? queryError.message
-      : queryError
-        ? "Unable to load shifts."
-        : "");
+  const visibleError = error;
   const save = async (payload: ShiftPayload) => {
     try {
       await saveMutation.mutateAsync({
@@ -279,6 +275,9 @@ export default function ShiftsPage() {
             </label>
           </div>
         </section>
+        {queryError && !data ? (
+          <ErrorDisplay kind="unexpected" variant="inline" error={queryError} onRetry={() => void refetch()} />
+        ) : (
         <Table
           columns={columns}
           rows={shifts}
@@ -291,6 +290,7 @@ export default function ShiftsPage() {
           onPageChange={setPage}
           emptyMessage="No shifts found."
         />
+        )}
       </div>
       {form && (
         <ShiftFormModal

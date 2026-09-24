@@ -17,6 +17,7 @@ import { PayrollForm } from "@/components/OM/Users/PayrollForm";
 import { getUser, type EditableEmployee } from "@/Services/user";
 import type { EmployeeFormValues } from "@/Types/employeeTypes";
 import { tabs } from "@/components/OM/Users/constants";
+import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 
 const formId = "edit-employee-form";
 type EmployeeTab = "Basic" | "Employment" | "Payroll";
@@ -33,17 +34,12 @@ export default function EditEmployeeRoute() {
     data: employee = null,
     isLoading: loading,
     error: queryError,
+    refetch,
   } = useQuery<EditableEmployee>({
     queryKey: ["users", userId],
     queryFn: () => getUser(userId),
     enabled: Boolean(userId),
   });
-  const error =
-    queryError instanceof Error
-      ? queryError.message
-      : queryError
-        ? "Unable to load employee details."
-        : "";
   const refreshEmployee = () =>
     void queryClient.invalidateQueries({ queryKey: ["users", userId] });
 
@@ -68,12 +64,14 @@ export default function EditEmployeeRoute() {
         </div>
       </section>
     );
-  if (error || !employee)
+  if (queryError)
     return (
-      <section className="p-8 text-sm text-red-700">
-        {error || "Employee not found."}
+      <section className="p-8">
+        <ErrorDisplay kind="unexpected" variant="inline" error={queryError} onRetry={() => void refetch()} />
       </section>
     );
+  if (!employee)
+    return <section className="p-8 text-sm text-slate-500">Employee not found.</section>;
   return (
     <section className="p-5 text-slate-800 sm:p-7 lg:p-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

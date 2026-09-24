@@ -10,6 +10,7 @@ import {
   type OfficerParticularsPdfSection,
 } from "@/lib/officerParticularsPdf";
 import { getUser, type EditableEmployee } from "@/Services/user";
+import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 
 type Employment = {
   dateJoin?: string;
@@ -59,17 +60,12 @@ export default function EmployeeBioDataRoute() {
     data: employee = null,
     isLoading,
     error: queryError,
+    refetch,
   } = useQuery<EditableEmployee>({
     queryKey: ["users", userId, "bio-data"],
     queryFn: () => getUser(userId),
     enabled: Boolean(userId),
   });
-  const error =
-    queryError instanceof Error
-      ? queryError.message
-      : queryError
-        ? "Unable to load officer particulars."
-        : "";
   const employment = useMemo(
     () => (employee?.employmentRecords as Employment[] | undefined) ?? [],
     [employee],
@@ -98,12 +94,14 @@ export default function EmployeeBioDataRoute() {
           .filter((course) => course !== "-")
       : [];
   }, [employee]);
-  if (!userId || error)
+  if (!userId || queryError)
     return (
       <section className="p-8">
-        <p className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error || "Employee not found."}
-        </p>
+        {queryError ? (
+          <ErrorDisplay kind="unexpected" variant="inline" error={queryError} onRetry={() => void refetch()} />
+        ) : (
+          <p className="text-sm text-slate-600">Employee not found.</p>
+        )}
         <button
           type="button"
           onClick={() => router.push("/om/users")}
