@@ -20,7 +20,7 @@ const accountWithProfile = {
 };
 const normalizedId = (employeeId) => employeeId.trim().toLowerCase();
 const isSupportedAccountRole = (role) => ["ADMIN", "OM", "OFFICER"].includes(role.trim().toUpperCase());
-const dashboardFor = (role) => role === "OFFICER" ? "/officer/check-in" : "/om/site";
+const dashboardFor = (role) => role === "OFFICER" ? "/officer" : "/om/site";
 const authCookieOptions = () => {
     const production = process.env.NODE_ENV === "production";
     return {
