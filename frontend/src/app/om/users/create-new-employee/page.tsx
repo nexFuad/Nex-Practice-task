@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BasicEmployeeForm } from "@/components/OM/Users/BasicEmployeeForm";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { EmploymentRecords } from "@/components/OM/Users/Employment/EmploymentRecords";
 import { PayrollForm } from "@/components/OM/Users/PayrollForm";
 import { tabs } from "@/components/OM/Users/constants";
@@ -15,7 +15,7 @@ import { tabs } from "@/components/OM/Users/constants";
 type EmployeeTab = "Basic" | "Employment" | "Payroll";
 const employeeTabIcons = [ContactRound, BriefcaseBusiness, WalletCards];
 
-export default function CreateNewEmployeePage() {
+function CreateNewEmployeeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [employeeId, setEmployeeId] = useState(
@@ -99,5 +99,13 @@ export default function CreateNewEmployeePage() {
         </div>
       </section>
     </section>
+  );
+}
+
+export default function CreateNewEmployeePage() {
+  return (
+    <Suspense fallback={<div className="p-5 text-slate-500">Loading employee form...</div>}>
+      <CreateNewEmployeeForm />
+    </Suspense>
   );
 }
