@@ -11,16 +11,13 @@ import {
 } from "@/lib/officerParticularsPdf";
 import { getUser, type EditableEmployee } from "@/Services/user";
 import { ErrorDisplay } from "@/components/error/ErrorDisplay";
-
-type Employment = {
-  dateJoin?: string;
-  dateLeft?: string;
-  status?: string;
-  confirmationDate?: string;
-  remarks?: string;
-};
-type PwmHistory = { role?: string; roleStartDate?: string };
-type Site = { id?: string; name?: string };
+import type {
+  BioDataCourse,
+  BioDataDetailRow,
+  BioDataEmployment,
+  BioDataPwmHistory,
+  BioDataSite,
+} from "@/Types/bioDataTypes";
 const fallbackCompany = {
   name: "Azovis",
   address: "-",
@@ -67,15 +64,15 @@ export default function EmployeeBioDataRoute() {
     enabled: Boolean(userId),
   });
   const employment = useMemo(
-    () => (employee?.employmentRecords as Employment[] | undefined) ?? [],
+    () => (employee?.employmentRecords as BioDataEmployment[] | undefined) ?? [],
     [employee],
   );
   const pwmHistory = useMemo(
-    () => (employee?.pwmEmploymentHistory as PwmHistory[] | undefined) ?? [],
+    () => (employee?.pwmEmploymentHistory as BioDataPwmHistory[] | undefined) ?? [],
     [employee],
   );
   const sites = useMemo(
-    () => (employee?.siteAssignments as Site[] | undefined) ?? [],
+    () => (employee?.siteAssignments as BioDataSite[] | undefined) ?? [],
     [employee],
   );
   const courses = useMemo(() => {
@@ -87,8 +84,8 @@ export default function EmployeeBioDataRoute() {
             typeof course === "string"
               ? course
               : display(
-                  (course as { name?: string; title?: string }).name ??
-                    (course as { title?: string }).title,
+                  (course as BioDataCourse).name ??
+                    (course as BioDataCourse).title,
                 ),
           )
           .filter((course) => course !== "-")
@@ -130,7 +127,7 @@ export default function EmployeeBioDataRoute() {
     sites.find((site) => site.id === employee.deploymentSiteId)?.name ??
     sites[0]?.name;
   const latestEmployment = employment[0];
-  const personalLeft: [string, string][] = [
+  const personalLeft: BioDataDetailRow[] = [
     ["PWM Grade", display(pwmHistory[0]?.role ?? employee.role)],
     ["Full Name", display(employee.fullName)],
     ["Date of Birth", formatDate(employee.dateOfBirth)],
@@ -139,7 +136,7 @@ export default function EmployeeBioDataRoute() {
     ["Marital Status", display(employee.maritalStatus)],
     ["Deployment Site", display(deploymentSite)],
   ];
-  const personalRight: [string, string][] = [
+  const personalRight: BioDataDetailRow[] = [
     ["Deployment Grade", display(employee.role)],
     ["NRIC/FIN No.", display(employee.nric)],
     ["Age", calculateAge(employee.dateOfBirth)],
@@ -387,7 +384,7 @@ function OfficerParticularsSkeleton() {
     </section>
   );
 }
-function DetailList({ rows }: { rows: [string, string][] }) {
+function DetailList({ rows }: { rows: BioDataDetailRow[] }) {
   return (
     <dl className="space-y-3 text-sm">
       {rows.map(([label, value]) => (

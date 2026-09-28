@@ -1,4 +1,5 @@
 "use client";
+import type { SidebarLink } from "@/Types/componentTypes";
 /* eslint-disable @next/next/no-img-element -- Profile URLs are user-provided and may use an external image host. */
 
 import {
@@ -14,7 +15,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -26,8 +26,6 @@ import {
 } from "@/lib/auth.session";
 import { logout } from "@/Services/auth";
 
-type SidebarLink = { label: string; href: string; icon: LucideIcon };
-
 const omLinks: SidebarLink[] = [
   { label: "Sites", href: "/om/site", icon: MapPin },
   { label: "Users", href: "/om/users", icon: Users },
@@ -37,7 +35,7 @@ const omLinks: SidebarLink[] = [
 const officerLinks: SidebarLink[] = [
   {
     label: "Check In / Check Out",
-    href: "/officer",
+    href: "/officer/check-in",
     icon: ClipboardCheck,
   },
 ];

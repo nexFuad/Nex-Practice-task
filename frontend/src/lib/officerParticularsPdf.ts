@@ -1,4 +1,6 @@
-export type OfficerParticularsPdfSection = { title: string; lines: string[] };
+import type { OfficerParticularsPdfSection } from "@/Types/pdfTypes";
+export type { OfficerParticularsPdfSection } from "@/Types/pdfTypes";
+
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;

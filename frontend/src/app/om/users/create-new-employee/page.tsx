@@ -1,4 +1,6 @@
 "use client";
+
+import type { EmployeeTab } from "@/Types/userTypes";
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -10,9 +12,8 @@ import { BasicEmployeeForm } from "@/components/OM/Users/BasicEmployeeForm";
 import { Suspense, useState } from "react";
 import { EmploymentRecords } from "@/components/OM/Users/Employment/EmploymentRecords";
 import { PayrollForm } from "@/components/OM/Users/PayrollForm";
-import { tabs } from "@/components/OM/Users/constants";
+import { tabs } from "@/Types/constants";
 
-type EmployeeTab = "Basic" | "Employment" | "Payroll";
 const employeeTabIcons = [ContactRound, BriefcaseBusiness, WalletCards];
 
 function CreateNewEmployeeForm() {

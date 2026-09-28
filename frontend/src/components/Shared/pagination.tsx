@@ -1,14 +1,7 @@
 "use client";
+import type { PaginationProps } from "@/Types/componentTypes";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-type PaginationProps = {
-  page: number;
-  pageSize: number;
-  totalItems: number;
-  onPageChange: (page: number) => void;
-  className?: string;
-};
 
 export function Pagination({
   page,

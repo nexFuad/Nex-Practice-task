@@ -1,5 +1,7 @@
 "use client";
 
+import { OMDashboardHeader } from "@/components/OM/OMDashboardHeader";
+
 import { Download, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +14,7 @@ import {
 } from "@/Services/shift";
 import { ShiftFormModal } from "../../../components/OM/Shift/ShiftFormModal";
 import { ShiftStats } from "../../../components/OM/Shift/ShiftStats";
+import { OMStatusSelect } from "@/components/OM/OMStatusSelect";
 import {
   Table,
   type TableAction,
@@ -203,15 +206,10 @@ export default function ShiftsPage() {
   return (
     <section className="min-w-0 px-5 pb-5 pt-2 text-slate-800">
       <div className="space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">
-              Shift Management
-            </h1>
-            <p className="text-sm text-slate-500">
-              Manage shift schedules and site assignments
-            </p>
-          </div>
+        <OMDashboardHeader
+          title="Shift Management"
+          description="Manage shift schedules and site assignments"
+        >
           <button
             type="button"
             onClick={() => setForm("new")}
@@ -220,7 +218,7 @@ export default function ShiftsPage() {
             <Plus className="size-4" />
             Add Shift
           </button>
-        </header>
+        </OMDashboardHeader>
         <ShiftStats values={stats} />
         <section className="flex flex-col">
           <div className="flex flex-1 flex-col space-y-4 pt-4">
@@ -234,18 +232,14 @@ export default function ShiftsPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <select
+                <OMStatusSelect
                   value={status}
-                  onChange={(event) => {
-                    setStatus(event.target.value);
+                  label="Filter shifts by status"
+                  onChange={(value) => {
+                    setStatus(value);
                     setPage(1);
                   }}
-                  className="h-8 min-w-36 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-400"
-                >
-                  <option value="ALL">All Status</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                </select>
+                />
                 <button
                   type="button"
                   onClick={exportCsv}

@@ -1,45 +1,11 @@
 "use client";
+import type { TableProps } from "@/Types/componentTypes";
+export type { TableColumn, TableAction } from "@/Types/componentTypes";
 
-import { MoreVertical, type LucideIcon } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { createPortal } from "react-dom";
-import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Pagination } from "./pagination";
-
-export type TableColumn<T> = {
-  id: string;
-  header: ReactNode;
-  cell: (row: T, index: number) => ReactNode;
-  className?: string;
-  headerClassName?: string;
-  minWidth?: string;
-};
-
-export type TableAction<T> = {
-  label: string;
-  icon?: LucideIcon;
-  onClick: (row: T) => void;
-  danger?: boolean;
-  hidden?: (row: T) => boolean;
-};
-
-type TableProps<T> = {
-  columns: TableColumn<T>[];
-  rows: T[];
-  getRowId: (row: T, index: number) => string | number;
-  emptyMessage?: string;
-  onRowClick?: (row: T) => void;
-  page?: number;
-  pageSize?: number;
-  totalItems?: number;
-  onPageChange?: (page: number) => void;
-  minHeight?: string;
-  tableMinWidth?: string;
-  className?: string;
-  loading?: boolean;
-  skeletonRows?: number;
-  actions?: TableAction<T>[];
-};
 
 export function Table<T>({
   columns,

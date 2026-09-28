@@ -1,6 +1,8 @@
+import type { CapturedLocation } from "@/Types/attendanceTypes";
 import { ChevronsUpDown, Search, Upload, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { uploadImage } from "@/Services/upload";
+import { AppSelect } from "@/components/Shared/AppSelect";
 import type {
   AttendanceEmployee,
   AttendanceFormValues,
@@ -32,17 +34,6 @@ const initial = (): Partial<AttendanceFormValues> => ({
 const dateInput = (value: string | null) =>
   value ? new Date(value).toISOString().slice(0, 16) : "";
 const uploadPhoto = uploadImage;
-type CapturedLocation = Pick<
-  AttendanceFormValues,
-  | "checkInLatitude"
-  | "checkInLongitude"
-  | "checkInLocationAccuracy"
-  | "checkInLocationCapturedAt"
-  | "checkOutLatitude"
-  | "checkOutLongitude"
-  | "checkOutLocationAccuracy"
-  | "checkOutLocationCapturedAt"
->;
 const emptyLocation: CapturedLocation = {
   checkInLatitude: null,
   checkInLongitude: null,
@@ -298,18 +289,14 @@ export function AttendanceFormModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="sm:col-span-2 text-sm font-medium">
               <span className="mb-2 block">Site/Post</span>
-              <select
+              <AppSelect
                 value={values.siteId ?? ""}
-                onChange={(event) => set("siteId", event.target.value)}
+                label="Site or post"
+                placeholder="Select site or post"
+                onValueChange={(value) => set("siteId", value)}
                 className={field}
-              >
-                <option value="">Select site or post</option>
-                {sites.map((site) => (
-                  <option key={site.id} value={site.id}>
-                    {site.name} ({site.code})
-                  </option>
-                ))}
-              </select>
+                options={sites.map((site) => ({ value: site.id, label: `${site.name} (${site.code})` }))}
+              />
             </label>
             <label className="text-sm font-medium">
               <span className="mb-2 block">Shift Date</span>
@@ -322,18 +309,14 @@ export function AttendanceFormModal({
             </label>
             <label className="text-sm font-medium">
               <span className="mb-2 block">Shift Time</span>
-              <select
+              <AppSelect
                 defaultValue=""
-                onChange={(event) => chooseShift(event.target.value)}
+                label="Shift time"
+                placeholder="Select shift time"
+                onValueChange={chooseShift}
                 className={field}
-              >
-                <option value="">Select shift time</option>
-                {shifts.map((shift) => (
-                  <option key={shift.id} value={shift.id}>
-                    {shift.name} ({shift.startTime} - {shift.endTime})
-                  </option>
-                ))}
-              </select>
+                options={shifts.map((shift) => ({ value: shift.id, label: `${shift.name} (${shift.startTime} - ${shift.endTime})` }))}
+              />
             </label>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -350,14 +333,13 @@ export function AttendanceFormModal({
           </div>
           <label className="block text-sm font-medium">
             <span className="mb-2 block">Status</span>
-            <select
+            <AppSelect
               value={values.status ?? "ON_DUTY"}
-              onChange={(event) => set("status", event.target.value)}
+              label="Attendance status"
+              onValueChange={(value) => set("status", value)}
               className={field}
-            >
-              <option value="ON_DUTY">On Duty</option>
-              <option value="COMPLETED">Completed</option>
-            </select>
+              options={[{ value: "ON_DUTY", label: "On Duty" }, { value: "COMPLETED", label: "Completed" }]}
+            />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <PhotoField

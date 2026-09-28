@@ -1,13 +1,7 @@
+import type { LoginPayload, AuthResponse } from "@/Types/authTypes";
+export type { LoginPayload } from "@/Types/authTypes";
 import { apiRequest } from "./client";
 import type { SignedInUser } from "@/lib/auth.session";
-
-export type LoginPayload = {
-  employeeId: string;
-  company: string;
-  password: string;
-  rememberMe: boolean;
-};
-type AuthResponse = { user: SignedInUser; dashboardPath: string };
 export const refreshSession = () =>
   apiRequest<AuthResponse>("/api/auth/refresh", { method: "POST" });
 export const login = (payload: LoginPayload) =>

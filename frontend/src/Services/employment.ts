@@ -1,28 +1,6 @@
+import type { EmploymentRecord, PwmHistory, SavedEmployment } from "@/Types/employmentTypes";
+export type { EmploymentRecord, PwmHistory, SavedEmployment } from "@/Types/employmentTypes";
 import { apiRequest } from "@/Services/client";
-export type EmploymentRecord = {
-  id: string;
-  employeeId?: string;
-  dateJoin: string;
-  dateLeft: string;
-  probationPeriod: string;
-  noticePeriod: string;
-  status: string;
-  notificationDate: string;
-  confirmationDate: string;
-  remarks: string;
-  createdAt: string;
-};
-export type PwmHistory = {
-  id: string;
-  employeeId?: string;
-  role: string;
-  roleStartDate: string;
-  createdAt: string;
-};
-export type SavedEmployment = {
-  employmentRecords: EmploymentRecord[];
-  pwmHistory: PwmHistory[];
-};
 export async function getSavedEmployment(employeeId?: string) {
   return apiRequest<SavedEmployment>(
     `/api/employment${employeeId ? `?employeeId=${encodeURIComponent(employeeId)}` : ""}`,

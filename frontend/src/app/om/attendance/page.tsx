@@ -1,5 +1,7 @@
 "use client";
 
+import { OMDashboardHeader } from "@/components/OM/OMDashboardHeader";
+
 /* eslint-disable @next/next/no-img-element -- Attendance thumbnails use stored photo URLs. */
 import {
   ChevronLeft,
@@ -37,6 +39,7 @@ import {
 } from "@/components/Shared/Table";
 
 const PAGE_SIZE = 10;
+
 const monthKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 const shiftMonth = (month: string, amount: number) => {
@@ -219,7 +222,6 @@ export default function AttendancePage() {
       );
     }
   };
-
   const columns = useMemo<TableColumn<AttendanceRecord>[]>(
     () => [
       {
@@ -384,44 +386,38 @@ export default function AttendancePage() {
     <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
       <div className="min-w-0 px-5 pb-5 pt-2 text-slate-800">
         <div className="space-y-6">
-          <header className="flex items-center justify-between gap-4">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-2xl font-semibold text-slate-800">
-                Attendance
-              </h1>
-              <p className="text-sm text-slate-500">
-                Monthly attendance overview for officers and operations
-                managers.
-              </p>
-            </div>
+          <OMDashboardHeader
+            title="Attendance"
+            description="Monthly attendance overview for officers and operations managers."
+          >
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-              <button
-                type="button"
-                aria-label="Previous month"
-                onClick={() => {
-                  setMonth((value) => shiftMonth(value, -1));
-                  setPage(1);
-                }}
-                className="grid size-8 place-items-center rounded-md hover:bg-slate-100"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <span className="min-w-30 text-center text-sm font-medium text-slate-900">
-                {monthLabel(month)}
-              </span>
-              <button
-                type="button"
-                aria-label="Next month"
-                onClick={() => {
-                  setMonth((value) => shiftMonth(value, 1));
-                  setPage(1);
-                }}
-                className="grid size-8 place-items-center rounded-md hover:bg-slate-100"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
-          </header>
+                <button
+                  type="button"
+                  aria-label="Previous month"
+                  onClick={() => {
+                    setMonth((value) => shiftMonth(value, -1));
+                    setPage(1);
+                  }}
+                  className="grid size-8 place-items-center rounded-md hover:bg-slate-100"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <span className="min-w-30 text-center text-sm font-medium text-slate-900">
+                  {monthLabel(month)}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Next month"
+                  onClick={() => {
+                    setMonth((value) => shiftMonth(value, 1));
+                    setPage(1);
+                  }}
+                  className="grid size-8 place-items-center rounded-md hover:bg-slate-100"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+          </OMDashboardHeader>
           <AttendanceStats {...stats} />
           <section className="space-y-4">
             <AttendanceToolbar

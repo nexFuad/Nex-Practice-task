@@ -1,32 +1,9 @@
+import type { ApiUser, CreateUserPayload, PaginatedUsers, UserFilterOptions, EditableEmployee, AssignedSite, UserScheduleRecord, PayrollPayload } from "@/Types/userServiceTypes";
+export type { CreateUserPayload, PaginatedUsers, UserFilterOptions, EditableEmployee, AssignedSite, UserScheduleRecord, PayrollPayload } from "@/Types/userServiceTypes";
 import type { DemoUser } from "@/Types/userTypes";
 import { apiRequest as request } from "@/Services/client";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-type ApiUser = {
-  id: string;
-  fullName: string;
-  employeeId: string;
-  email: string | null;
-  phone: string;
-  role: string;
-  status: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "RESIGNED";
-  sites: { site: { name: string } }[];
-};
-export type CreateUserPayload = Record<
-  string,
-  string | boolean | string[] | undefined
->;
-export type PaginatedUsers = {
-  items: DemoUser[];
-  page: number;
-  pageSize: number;
-  total: number;
-  stats: { total: number; activeOfficers: number; operationManagers: number };
-};
-export type UserFilterOptions = {
-  roles: string[];
-  statuses: string[];
-};
 const asUser = (user: ApiUser): DemoUser => ({
   databaseId: user.id,
   id: user.employeeId,
@@ -71,8 +48,6 @@ export async function createUser(payload: CreateUserPayload) {
   );
 }
 
-export type EditableEmployee = CreateUserPayload & { profileImageUrl?: string };
-
 export function getUser(employeeId: string) {
   return request<EditableEmployee>(
     `${apiBaseUrl}/api/users/${encodeURIComponent(employeeId)}`,
@@ -85,16 +60,6 @@ export function updateUser(employeeId: string, payload: CreateUserPayload) {
     { method: "PUT", body: JSON.stringify(payload) },
   );
 }
-
-export type AssignedSite = { id: string; name: string; code: string };
-export type UserScheduleRecord = {
-  id: string;
-  shiftDate: string;
-  shiftStart: string;
-  shiftEnd: string;
-  siteName: string | null;
-  status: string;
-};
 
 export function saveUserSites(employeeId: string, siteIds: string[]) {
   return request<AssignedSite[]>(
@@ -155,13 +120,6 @@ export async function deleteUser(employeeId: string) {
     { method: "DELETE" },
   );
 }
-
-export type PayrollPayload = {
-  profile: Record<string, string | string[]>;
-  bankAccounts: Record<string, string>[];
-  earnings: Record<string, string>[];
-  deductions: Record<string, string | boolean>[];
-};
 
 export function getUserPayroll(userId: string) {
   return request<PayrollPayload>(

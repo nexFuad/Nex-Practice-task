@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { MapPin, X } from "lucide-react";
 import type { Site } from "@/Types/siteTypes";
+import { AppSelect } from "@/components/Shared/AppSelect";
 
 export function SiteFormModal({
   site,
@@ -115,18 +116,18 @@ export function SiteFormModal({
             </span>
           </label>
           <Field label="Timezone">
-            <select>
-              <option>Singapore</option>
-            </select>
+            <AppSelect
+              label="Timezone"
+              defaultValue="Singapore"
+              options={[{ value: "Singapore", label: "Singapore" }]}
+              className="w-full"
+            />
           </Field>
-          <select
+          <input
+            type="hidden"
             name="status"
             defaultValue={isNew ? "ACTIVE" : site.status}
-            className="hidden"
-          >
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
+          />
         </div>
         <footer className="mt-5 flex justify-end gap-3">
           <button

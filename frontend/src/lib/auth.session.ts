@@ -1,13 +1,5 @@
-export type SignedInUser = {
-  id: string;
-  employeeId: string;
-  fullName: string;
-  company: string;
-  email: string | null;
-  role: string;
-  profileImageUrl: string | null;
-  passwordChangedAt: string;
-};
+import type { SignedInUser } from "@/Types/authTypes";
+export type { SignedInUser } from "@/Types/authTypes";
 
 const storageKey = "guardly-signed-in-user";
 const explicitLogoutKey = "guardly-explicit-logout";

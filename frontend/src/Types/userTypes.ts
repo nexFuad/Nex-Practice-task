@@ -14,3 +14,5 @@ export type DemoUser = {
   assignedSite?: string;
   additionalSites?: number;
 };
+
+export type EmployeeTab = "Basic" | "Employment" | "Payroll";

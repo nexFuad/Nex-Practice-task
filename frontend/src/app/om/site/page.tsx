@@ -1,5 +1,7 @@
 "use client";
 
+import { OMDashboardHeader } from "@/components/OM/OMDashboardHeader";
+
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -15,6 +17,7 @@ import {
 import { SiteDetailsModal } from "../../../components/OM/Site/SiteDetailsModal";
 import { SiteFormModal } from "../../../components/OM/Site/SiteFormModal";
 import { SiteStats } from "../../../components/OM/Site/SiteStats";
+import { OMStatusSelect } from "@/components/OM/OMStatusSelect";
 import { Toast } from "../../../components/OM/Site/Toast";
 import {
   Table,
@@ -229,15 +232,10 @@ export default function SitePage() {
     <section className="min-w-0 px-4 pb-5 pt-4 text-slate-800 sm:px-5">
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
       <div className="space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">
-              Site Management
-            </h1>
-            <p className="text-sm text-slate-500">
-              Manage security sites and locations
-            </p>
-          </div>
+        <OMDashboardHeader
+          title="Site Management"
+          description="Manage security sites and locations"
+        >
           <button
             type="button"
             onClick={() => setFormSite("new")}
@@ -246,7 +244,7 @@ export default function SitePage() {
             <Plus className="size-4" />
             Add Site
           </button>
-        </header>
+        </OMDashboardHeader>
         <SiteStats values={metrics} />
         <section className="flex flex-col">
           <div className="flex flex-1 flex-col space-y-4 pt-4">
@@ -258,18 +256,15 @@ export default function SitePage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <select
+                <OMStatusSelect
                   value={status}
-                  onChange={(event) => {
-                    setStatus(event.target.value);
+                  label="Filter sites by status"
+                  onChange={(value) => {
+                    setStatus(value);
                     setPage(1);
                   }}
-                  className="h-10 min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm outline-none focus:border-blue-400 sm:h-9 sm:w-45"
-                >
-                  <option value="ALL">All Status</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                </select>
+                  className="h-10 sm:h-9 sm:w-45"
+                />
                 <button
                   type="button"
                   onClick={exportCsv}

@@ -1,15 +1,8 @@
 "use client";
+import type { ErrorDisplayProps } from "@/Types/componentTypes";
 
 import { ArrowLeft, RotateCcw, ShieldAlert } from "lucide-react";
 import { useSyncExternalStore } from "react";
-
-type ErrorDisplayProps = {
-  kind: "not-found" | "unexpected";
-  onRetry?: () => void;
-  reference?: string;
-  variant?: "page" | "inline";
-  error?: unknown;
-};
 
 export function ErrorDisplay({
   kind,

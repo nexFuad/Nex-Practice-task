@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import type { Shift, ShiftPayload } from "@/Types/shiftTypes";
+import { AppSelect } from "@/components/Shared/AppSelect";
 
 const defaultValues: ShiftPayload = {
   companyId: "default",
@@ -175,16 +176,13 @@ export function ShiftFormModal({
             </label>
             <label className="text-sm font-medium text-slate-800">
               Category
-              <select
+              <AppSelect
                 value={values.category}
-                onChange={(event) => set("category", event.target.value)}
+                label="Category"
+                onValueChange={(value) => set("category", value)}
                 className={inputClass()}
-              >
-                <option>Main</option>
-                <option>Relief</option>
-                <option>Overtime</option>
-                <option>Training</option>
-              </select>
+                options={["Main", "Relief", "Overtime", "Training"].map((value) => ({ value, label: value }))}
+              />
             </label>
             <label className="text-sm font-medium text-slate-800">
               Color

@@ -1,4 +1,5 @@
 "use client";
+import type { UserActionDialogProps } from "@/Types/componentTypes";
 
 import { AlertCircle, Building2, Mail, MapPin, Phone, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -19,15 +20,6 @@ import {
   type UserScheduleRecord,
 } from "@/Services/user";
 
-type Props = {
-  user: DemoUser;
-  action: UserMenuAction;
-  onClose: () => void;
-  onChanged: () => void;
-  onDeleted: (databaseId: string) => void;
-  onToast?: (message: string) => void;
-};
-
 const title: Record<UserMenuAction, string> = {
   "View Assigned Sites": "Assigned Sites",
   "Assign to Sites": "Assign Sites",
@@ -47,7 +39,7 @@ export function UserActionDialog({
   onChanged,
   onDeleted,
   onToast,
-}: Props) {
+}: UserActionDialogProps) {
   const [selectedSites, setSelectedSites] = useState<string[] | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { FieldLabel, Input, Select } from "../FormField";
+import { FieldLabel, Input } from "../FormField";
+import { AppSelect } from "@/components/Shared/AppSelect";
 
 export function DateField({
   label,
@@ -40,12 +41,14 @@ export function Choice({
   return (
     <div>
       <FieldLabel>{label}</FieldLabel>
-      <Select value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">{placeholder}</option>
-        {options.map((item) => (
-          <option key={item}>{item}</option>
-        ))}
-      </Select>
+      <AppSelect
+        value={value}
+        label={label}
+        placeholder={placeholder}
+        onValueChange={onChange}
+        className="w-full"
+        options={options.map((item) => ({ value: item, label: item }))}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import type { AttendanceListResult } from "@/Types/attendanceServiceTypes";
 import type {
   AttendanceEmployee,
   AttendanceFormValues,
@@ -6,14 +7,6 @@ import type {
 } from "@/Types/attendanceTypes";
 import { apiRequest as request } from "./client";
 
-type Result = {
-  records: AttendanceRecord[];
-  page: number;
-  pageSize: number;
-  total: number;
-  stats: { total: number; onDuty: number; completed: number };
-};
-
 export const getAttendance = (
   month: string,
   employeeId: string,
@@ -21,7 +14,7 @@ export const getAttendance = (
   page = 1,
   pageSize = 10,
 ) =>
-  request<Result>(
+  request<AttendanceListResult>(
     `/api/attendance?month=${encodeURIComponent(month)}&employeeId=${encodeURIComponent(employeeId)}&query=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`,
   );
 

@@ -39,3 +39,15 @@ export type AttendanceShift = {
   siteId: string | null;
   siteName: string | null;
 };
+
+export type CapturedLocation = Pick<
+  AttendanceFormValues,
+  | "checkInLatitude"
+  | "checkInLongitude"
+  | "checkInLocationAccuracy"
+  | "checkInLocationCapturedAt"
+  | "checkOutLatitude"
+  | "checkOutLongitude"
+  | "checkOutLocationAccuracy"
+  | "checkOutLocationCapturedAt"
+>;

@@ -1,13 +1,8 @@
 "use client";
+import type { PasswordValues } from "@/Types/authTypes";
 
 import { Eye, EyeOff, LockKeyhole, X } from "lucide-react";
 import { useState } from "react";
-
-type PasswordValues = {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-};
 const blank: PasswordValues = {
   currentPassword: "",
   newPassword: "",

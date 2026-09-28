@@ -1,4 +1,5 @@
-type LoadingProps = { message?: string; backgroundClassName?: string };
+import type { LoadingProps } from "@/Types/componentTypes";
+
 
 export function Loading({
   message = "Loading your workspace…",

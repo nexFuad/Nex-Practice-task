@@ -11,8 +11,9 @@ import {
   languages,
   primaryRoles,
   secondaryRolesByPrimaryRole,
-} from "./constants";
-import { FieldLabel, Input, Select, Textarea } from "./FormField";
+} from "@/Types/constants";
+import { FieldLabel, Input, Textarea } from "./FormField";
+import { AppSelect } from "@/components/Shared/AppSelect";
 import { ProfileUploader } from "./ProfileUploader";
 import { DeploymentAssignment, SiteAssignments } from "./DeploymentAssignments";
 import type { EmployeeFormValues, SiteOption } from "@/Types/employeeTypes";
@@ -555,19 +556,16 @@ function Choice({
   return (
     <div>
       <FieldLabel required={required}>{label}</FieldLabel>
-      <Select
+      <AppSelect
         name={name}
+        label={label}
         value={value}
         required={required}
-        onChange={(event) => onChange(name, event.target.value)}
-      >
-        <option value="">Select {label.toLowerCase()}</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </Select>
+        placeholder={`Select ${label.toLowerCase()}`}
+        onValueChange={(value) => onChange(name, value)}
+        className="w-full"
+        options={options.map((option) => ({ value: option, label: option }))}
+      />
     </div>
   );
 }

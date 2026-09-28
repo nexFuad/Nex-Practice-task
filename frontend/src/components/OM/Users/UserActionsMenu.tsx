@@ -1,4 +1,6 @@
 "use client";
+import type { UserMenuAction } from "@/Types/componentTypes";
+export type { UserMenuAction } from "@/Types/componentTypes";
 
 import {
   ClipboardList,
@@ -14,17 +16,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-
-export type UserMenuAction =
-  | "View Assigned Sites"
-  | "Assign to Sites"
-  | "View Schedule"
-  | "Bio data"
-  | "Reset Password"
-  | "Suspend User"
-  | "Resign User"
-  | "Activate User"
-  | "Delete User";
 
 const items: readonly [typeof Edit3, UserMenuAction][] = [
   [MapPin, "View Assigned Sites"],
@@ -59,7 +50,7 @@ export function UserActionsMenu({
     left: 0,
     maxHeight: 0,
   });
-  const editUrl = `/om/users/edit-employee/${encodeURIComponent(userId)}`;
+  const editUrl = `/om/users/${encodeURIComponent(userId)}`;
   const bioDataUrl = `/om/users/bio-data/${encodeURIComponent(userId)}`;
 
   useEffect(() => {

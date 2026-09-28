@@ -1,5 +1,7 @@
 "use client";
 
+import type { EmployeeTab } from "@/Types/userTypes";
+
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -16,17 +18,16 @@ import { EmploymentRecords } from "@/components/OM/Users/Employment/EmploymentRe
 import { PayrollForm } from "@/components/OM/Users/PayrollForm";
 import { getUser, type EditableEmployee } from "@/Services/user";
 import type { EmployeeFormValues } from "@/Types/employeeTypes";
-import { tabs } from "@/components/OM/Users/constants";
+import { tabs } from "@/Types/constants";
 import { ErrorDisplay } from "@/components/error/ErrorDisplay";
 
 const formId = "edit-employee-form";
-type EmployeeTab = "Basic" | "Employment" | "Payroll";
 const employeeTabIcons = [ContactRound, BriefcaseBusiness, WalletCards];
 
 export default function EditEmployeeRoute() {
   const router = useRouter();
-  const params = useParams<{ employeeId: string }>();
-  const userId = decodeURIComponent(params.employeeId ?? "");
+  const params = useParams<{ id: string }>();
+  const userId = params.id ?? "";
   const [activeTab, setActiveTab] = useState<EmployeeTab>("Basic");
   const [success, setSuccess] = useState("");
   const queryClient = useQueryClient();

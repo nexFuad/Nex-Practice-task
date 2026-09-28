@@ -1,5 +1,8 @@
 "use client";
 
+import { OMDashboardHeader } from "@/components/OM/OMDashboardHeader";
+import { AppSelect } from "@/components/Shared/AppSelect";
+
 import { useMemo, useState } from "react";
 import {
   Activity,
@@ -276,15 +279,10 @@ export default function UsersPage() {
   return (
     <section className="min-w-0 px-5 pb-5 pt-2 text-slate-800">
       <div className="space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-800">
-              Users Management
-            </h1>
-            <p className="text-sm text-slate-500">
-              Manage guards and operations managers
-            </p>
-          </div>
+        <OMDashboardHeader
+          title="Users Management"
+          description="Manage guards and operations managers"
+        >
           <button
             type="button"
             onClick={() => router.push("/om/users/create-new-employee")}
@@ -293,7 +291,7 @@ export default function UsersPage() {
             <Plus className="size-4" />
             Add New User
           </button>
-        </header>
+        </OMDashboardHeader>
 
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {userStatCards.map(
@@ -345,42 +343,32 @@ export default function UsersPage() {
               />
             </label>
             <div className="grid grid-cols-2 gap-3 sm:contents">
-              <select
+              <AppSelect
                 value={role}
+                label="Filter users by role"
                 disabled={filterOptionsQuery.isLoading}
-                onChange={(event) =>
-                  updateFilters(() => setRole(event.target.value))
+                onValueChange={(value) =>
+                  updateFilters(() => setRole(value))
                 }
-                className="h-10 min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm outline-none disabled:cursor-wait disabled:bg-slate-50 sm:w-37.5"
-              >
-                <option value="ALL">
-                  {filterOptionsQuery.isLoading ? "Loading roles…" : "All Roles"}
-                </option>
-                {(filterOptionsQuery.data?.roles ?? []).map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-              <select
+                className="h-10 min-w-0 w-full sm:w-37.5"
+                options={[
+                  { value: "ALL", label: filterOptionsQuery.isLoading ? "Loading roles…" : "All Roles" },
+                  ...(filterOptionsQuery.data?.roles ?? []).map((item) => ({ value: item, label: item })),
+                ]}
+              />
+              <AppSelect
                 value={status}
+                label="Filter users by status"
                 disabled={filterOptionsQuery.isLoading}
-                onChange={(event) =>
-                  updateFilters(() => setStatus(event.target.value))
+                onValueChange={(value) =>
+                  updateFilters(() => setStatus(value))
                 }
-                className="h-10 min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm outline-none disabled:cursor-wait disabled:bg-slate-50 sm:w-37.5"
-              >
-                <option value="ALL">
-                  {filterOptionsQuery.isLoading
-                    ? "Loading status…"
-                    : "All Status"}
-                </option>
-                {(filterOptionsQuery.data?.statuses ?? []).map((item) => (
-                  <option key={item} value={item}>
-                    {item.replaceAll("_", " ")}
-                  </option>
-                ))}
-              </select>
+                className="h-10 min-w-0 w-full sm:w-37.5"
+                options={[
+                  { value: "ALL", label: filterOptionsQuery.isLoading ? "Loading status…" : "All Status" },
+                  ...(filterOptionsQuery.data?.statuses ?? []).map((item) => ({ value: item, label: item.replaceAll("_", " ") })),
+                ]}
+              />
               {filterOptionsQuery.isLoading && (
                 <LoaderCircle
                   className="size-4 animate-spin self-center text-slate-400"

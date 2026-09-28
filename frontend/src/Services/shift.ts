@@ -1,17 +1,7 @@
+import type { PaginatedShifts } from "@/Types/shiftServiceTypes";
+export type { PaginatedShifts } from "@/Types/shiftServiceTypes";
 import type { Shift, ShiftPayload } from "@/Types/shiftTypes";
 import { apiRequest as request } from "@/Services/client";
-export type PaginatedShifts = {
-  items: Shift[];
-  page: number;
-  pageSize: number;
-  total: number;
-  stats: {
-    total: number;
-    active: number;
-    inactive: number;
-    assignedSites: number;
-  };
-};
 export const getShifts = (
   filters: {
     query?: string;

@@ -1,15 +1,5 @@
+import type { SiteActionsMenuProps } from "@/Types/componentTypes";
 import { Eye, PowerOff, SquarePen, Trash2 } from "lucide-react";
-import type { Site } from "@/Types/siteTypes";
-
-type Props = {
-  site: Site;
-  onView: () => void;
-  onEdit: () => void;
-  onToggleStatus: () => void;
-  onDelete: () => void;
-  floating?: boolean;
-  position?: { top: number; right: number };
-};
 
 export function SiteActionsMenu({
   site,
@@ -19,7 +9,7 @@ export function SiteActionsMenu({
   onDelete,
   floating = false,
   position,
-}: Props) {
+}: SiteActionsMenuProps) {
   return (
     <div
       role="menu"

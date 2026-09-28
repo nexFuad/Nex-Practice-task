@@ -1,32 +1,10 @@
+import type { ApiSite, SitePayload, AssignedSiteGuard, PaginatedSites } from "@/Types/siteServiceTypes";
+export type { SitePayload, AssignedSiteGuard, PaginatedSites } from "@/Types/siteServiceTypes";
 import type { Site, SiteStatus } from "@/Types/siteTypes";
 import { apiRequest as request } from "@/Services/client";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const sitesUrl = `${apiBaseUrl}/api/sites`;
-
-type ApiSite = Omit<Site, "latitude" | "longitude"> & {
-  latitude: number | null;
-  longitude: number | null;
-};
-
-export type SitePayload = {
-  name: string;
-  code: string;
-  address: string;
-  latitude: number | null;
-  longitude: number | null;
-  status: SiteStatus;
-};
-
-export type AssignedSiteGuard = {
-  id: string;
-  fullName: string;
-  employeeId: string;
-  role: string;
-  status: string;
-  profileImageUrl: string | null;
-  assignedAt: string;
-};
 
 function toSite(site: ApiSite): Site {
   return {
@@ -35,19 +13,6 @@ function toSite(site: ApiSite): Site {
     longitude: site.longitude?.toString(),
   };
 }
-
-export type PaginatedSites = {
-  items: Site[];
-  page: number;
-  pageSize: number;
-  total: number;
-  stats: {
-    total: number;
-    active: number;
-    inactive: number;
-    withGuards: number;
-  };
-};
 
 export async function getSites(
   filters: {
